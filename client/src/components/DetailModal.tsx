@@ -1,9 +1,9 @@
-import { Dialog, DialogContent, DialogHeader, DialogFooter, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogFooter, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
-import { Network, X, ExternalLink, Copy, Info } from "lucide-react";
+import { Network, X, ExternalLink, Copy, Info, CheckCircle, ArrowRight } from "lucide-react";
 import { ProcessedDeployment } from "@shared/types";
 import { truncateAddress, getExplorerUrl } from "@/lib/utils";
 
@@ -21,197 +21,264 @@ export default function DetailModal({
   
   return (
     <Dialog open={true} onOpenChange={onClose}>
-      <DialogContent className="max-w-3xl max-h-[90vh] overflow-auto bg-slate-800/90 backdrop-blur-md border-slate-600">
-        <DialogHeader className="flex flex-row justify-between items-center">
-          <div className="flex items-center">
-            <div className="h-12 w-12 rounded-full bg-gradient-to-r from-primary to-secondary flex items-center justify-center mr-4">
-              <Network className="text-white h-6 w-6" />
-            </div>
-            <div>
-              <DialogTitle className="text-2xl font-medium">{deployment.chainKey} Deployment</DialogTitle>
-              <div className="flex items-center">
-                <span className="text-sm text-slate-400 mr-3">EID: {deployment.eid}</span>
-                <Badge variant={deployment.stage === 'mainnet' ? 'default' : 'secondary'} className="bg-primary/20 text-primary">
-                  {deployment.stage}
-                </Badge>
+      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto bg-gradient-to-b from-background to-background-dark/80 backdrop-blur-lg border-secondary/20 rounded-xl shadow-2xl p-0">
+        {/* Header with glowing effect */}
+        <div className="relative overflow-hidden rounded-t-xl bg-gradient-to-r from-background-dark to-background p-6 border-b border-secondary/20">
+          <div className="absolute top-0 right-0 w-40 h-40 bg-primary/10 blur-3xl rounded-full -mr-20 -mt-20 opacity-60"></div>
+          <div className="absolute bottom-0 left-0 w-40 h-40 bg-accent/10 blur-3xl rounded-full -ml-20 -mb-20 opacity-60"></div>
+          
+          <DialogHeader className="flex flex-row justify-between items-center relative z-10">
+            <div className="flex items-center">
+              <div className="h-14 w-14 relative mr-5">
+                <div className="absolute inset-0 rounded-xl bg-gradient-to-br from-primary via-secondary to-accent opacity-70 blur-[8px]"></div>
+                <div className="relative w-full h-full rounded-xl bg-gradient-to-br from-primary to-accent flex items-center justify-center border border-white/10">
+                  <Network className="text-white h-6 w-6" />
+                </div>
               </div>
-            </div>
-          </div>
-          <Button variant="ghost" size="icon" onClick={onClose}>
-            <X className="h-5 w-5" />
-          </Button>
-        </DialogHeader>
-        
-        <div className="space-y-6 my-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="space-y-4">
-              <h3 className="text-lg font-medium text-slate-200 mb-2">Core Contracts</h3>
-              
               <div>
-                <p className="text-xs text-slate-400 mb-1">Endpoint</p>
-                <div className="flex items-center">
-                  <p className="text-sm font-mono text-slate-200 truncate">{deployment.endpoint.address}</p>
-                  <Button 
-                    variant="ghost" 
-                    size="sm" 
-                    className="ml-2 p-0 h-auto text-secondary hover:text-accent hover:bg-transparent"
-                    onClick={() => onCopyAddress(deployment.endpoint.address)}
-                  >
-                    <Copy className="h-4 w-4" />
-                  </Button>
-                </div>
+                <DialogTitle className="text-2xl font-bold tracking-tight">{deployment.chainKey} Deployment</DialogTitle>
+                <DialogDescription className="text-foreground/70">
+                  <div className="flex flex-wrap items-center gap-3 mt-1">
+                    <div className="flex items-center">
+                      <span className="text-sm font-mono font-medium">EID: {deployment.eid}</span>
+                    </div>
+                    <Badge variant={deployment.stage === 'mainnet' ? 'default' : 'secondary'} 
+                      className={deployment.stage === 'mainnet' 
+                        ? "bg-accent/10 text-accent border-accent/20" 
+                        : "bg-secondary/10 text-secondary border-secondary/20"}>
+                      {deployment.stage}
+                    </Badge>
+                    <div className="flex items-center gap-1.5 text-success text-sm">
+                      <CheckCircle className="h-4 w-4" />
+                      <span>Active</span>
+                    </div>
+                  </div>
+                </DialogDescription>
               </div>
+            </div>
+            <Button variant="ghost" size="icon" onClick={onClose} className="rounded-full hover:bg-foreground/10">
+              <X className="h-5 w-5" />
+              <span className="sr-only">Close</span>
+            </Button>
+          </DialogHeader>
+        </div>
+        
+        <div className="p-6 space-y-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {/* Core Contracts Panel */}
+            <div className="glass-panel p-5 space-y-5">
+              <h3 className="text-lg font-bold text-foreground flex items-center">
+                <div className="w-6 h-6 bg-primary/20 rounded-md flex items-center justify-center mr-2">
+                  <Network className="text-primary h-4 w-4" />
+                </div>
+                Core Contracts
+              </h3>
               
-              {deployment.ultraLightNodeV2 && (
-                <div>
-                  <p className="text-xs text-slate-400 mb-1">UltraLightNodeV2</p>
+              <div className="space-y-4">
+                <div className="p-3 rounded-lg bg-background/50 border border-secondary/10">
+                  <p className="text-xs uppercase tracking-wider font-medium text-foreground/60 mb-2">Endpoint</p>
                   <div className="flex items-center">
-                    <p className="text-sm font-mono text-slate-200 truncate">{deployment.ultraLightNodeV2.address}</p>
+                    <code className="text-sm font-mono text-foreground/80 break-all pr-2">{deployment.endpoint.address}</code>
                     <Button 
                       variant="ghost" 
                       size="sm" 
-                      className="ml-2 p-0 h-auto text-secondary hover:text-accent hover:bg-transparent"
-                      onClick={() => onCopyAddress(deployment.ultraLightNodeV2.address)}
+                      className="ml-auto p-1 h-auto text-secondary hover:text-accent hover:bg-secondary/10 rounded-full"
+                      onClick={() => onCopyAddress(deployment.endpoint.address)}
+                      aria-label="Copy endpoint address"
                     >
                       <Copy className="h-4 w-4" />
                     </Button>
                   </div>
                 </div>
-              )}
-              
-              {deployment.relayerV2 && (
-                <div>
-                  <p className="text-xs text-slate-400 mb-1">RelayerV2</p>
-                  <div className="flex items-center">
-                    <p className="text-sm font-mono text-slate-200 truncate">{deployment.relayerV2.address}</p>
-                    <Button 
-                      variant="ghost" 
-                      size="sm" 
-                      className="ml-2 p-0 h-auto text-secondary hover:text-accent hover:bg-transparent"
-                      onClick={() => onCopyAddress(deployment.relayerV2.address)}
-                    >
-                      <Copy className="h-4 w-4" />
-                    </Button>
+                
+                {deployment.ultraLightNodeV2 && (
+                  <div className="p-3 rounded-lg bg-background/50 border border-secondary/10">
+                    <p className="text-xs uppercase tracking-wider font-medium text-foreground/60 mb-2">UltraLightNodeV2</p>
+                    <div className="flex items-center">
+                      <code className="text-sm font-mono text-foreground/80 break-all pr-2">{deployment.ultraLightNodeV2.address}</code>
+                      <Button 
+                        variant="ghost" 
+                        size="sm" 
+                        className="ml-auto p-1 h-auto text-secondary hover:text-accent hover:bg-secondary/10 rounded-full"
+                        onClick={() => onCopyAddress(deployment.ultraLightNodeV2.address)}
+                        aria-label="Copy UltraLightNodeV2 address"
+                      >
+                        <Copy className="h-4 w-4" />
+                      </Button>
+                    </div>
                   </div>
-                </div>
-              )}
+                )}
+                
+                {deployment.relayerV2 && (
+                  <div className="p-3 rounded-lg bg-background/50 border border-secondary/10">
+                    <p className="text-xs uppercase tracking-wider font-medium text-foreground/60 mb-2">RelayerV2</p>
+                    <div className="flex items-center">
+                      <code className="text-sm font-mono text-foreground/80 break-all pr-2">{deployment.relayerV2.address}</code>
+                      <Button 
+                        variant="ghost" 
+                        size="sm" 
+                        className="ml-auto p-1 h-auto text-secondary hover:text-accent hover:bg-secondary/10 rounded-full"
+                        onClick={() => onCopyAddress(deployment.relayerV2.address)}
+                        aria-label="Copy RelayerV2 address"
+                      >
+                        <Copy className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </div>
+                )}
+              </div>
             </div>
             
-            <div className="space-y-4">
-              <h3 className="text-lg font-medium text-slate-200 mb-2">Send/Receive Contracts</h3>
+            {/* Send/Receive Contracts Panel */}
+            <div className="glass-panel p-5 space-y-5">
+              <h3 className="text-lg font-bold text-foreground flex items-center">
+                <div className="w-6 h-6 bg-secondary/20 rounded-md flex items-center justify-center mr-2">
+                  <ArrowRight className="text-secondary h-4 w-4" />
+                </div>
+                Send/Receive Contracts
+              </h3>
               
-              {deployment.sendUln301 && (
-                <div>
-                  <p className="text-xs text-slate-400 mb-1">SendUln301</p>
-                  <div className="flex items-center">
-                    <p className="text-sm font-mono text-slate-200 truncate">{deployment.sendUln301.address}</p>
-                    <Button 
-                      variant="ghost" 
-                      size="sm" 
-                      className="ml-2 p-0 h-auto text-secondary hover:text-accent hover:bg-transparent"
-                      onClick={() => onCopyAddress(deployment.sendUln301.address)}
-                    >
-                      <Copy className="h-4 w-4" />
-                    </Button>
+              <div className="space-y-4">
+                {deployment.sendUln301 && (
+                  <div className="p-3 rounded-lg bg-background/50 border border-secondary/10">
+                    <p className="text-xs uppercase tracking-wider font-medium text-foreground/60 mb-2">SendUln301</p>
+                    <div className="flex items-center">
+                      <code className="text-sm font-mono text-foreground/80 break-all pr-2">{deployment.sendUln301.address}</code>
+                      <Button 
+                        variant="ghost" 
+                        size="sm" 
+                        className="ml-auto p-1 h-auto text-secondary hover:text-accent hover:bg-secondary/10 rounded-full"
+                        onClick={() => onCopyAddress(deployment.sendUln301.address)}
+                        aria-label="Copy SendUln301 address"
+                      >
+                        <Copy className="h-4 w-4" />
+                      </Button>
+                    </div>
                   </div>
-                </div>
-              )}
-              
-              {deployment.receiveUln301 && (
-                <div>
-                  <p className="text-xs text-slate-400 mb-1">ReceiveUln301</p>
-                  <div className="flex items-center">
-                    <p className="text-sm font-mono text-slate-200 truncate">{deployment.receiveUln301.address}</p>
-                    <Button 
-                      variant="ghost" 
-                      size="sm" 
-                      className="ml-2 p-0 h-auto text-secondary hover:text-accent hover:bg-transparent"
-                      onClick={() => onCopyAddress(deployment.receiveUln301.address)}
-                    >
-                      <Copy className="h-4 w-4" />
-                    </Button>
+                )}
+                
+                {deployment.receiveUln301 && (
+                  <div className="p-3 rounded-lg bg-background/50 border border-secondary/10">
+                    <p className="text-xs uppercase tracking-wider font-medium text-foreground/60 mb-2">ReceiveUln301</p>
+                    <div className="flex items-center">
+                      <code className="text-sm font-mono text-foreground/80 break-all pr-2">{deployment.receiveUln301.address}</code>
+                      <Button 
+                        variant="ghost" 
+                        size="sm" 
+                        className="ml-auto p-1 h-auto text-secondary hover:text-accent hover:bg-secondary/10 rounded-full"
+                        onClick={() => onCopyAddress(deployment.receiveUln301.address)}
+                        aria-label="Copy ReceiveUln301 address"
+                      >
+                        <Copy className="h-4 w-4" />
+                      </Button>
+                    </div>
                   </div>
-                </div>
-              )}
-              
-              {deployment.nonceContract && (
-                <div>
-                  <p className="text-xs text-slate-400 mb-1">NonceContract</p>
-                  <div className="flex items-center">
-                    <p className="text-sm font-mono text-slate-200 truncate">{deployment.nonceContract.address}</p>
-                    <Button 
-                      variant="ghost" 
-                      size="sm" 
-                      className="ml-2 p-0 h-auto text-secondary hover:text-accent hover:bg-transparent"
-                      onClick={() => onCopyAddress(deployment.nonceContract.address)}
-                    >
-                      <Copy className="h-4 w-4" />
-                    </Button>
+                )}
+                
+                {deployment.nonceContract && (
+                  <div className="p-3 rounded-lg bg-background/50 border border-secondary/10">
+                    <p className="text-xs uppercase tracking-wider font-medium text-foreground/60 mb-2">NonceContract</p>
+                    <div className="flex items-center">
+                      <code className="text-sm font-mono text-foreground/80 break-all pr-2">{deployment.nonceContract.address}</code>
+                      <Button 
+                        variant="ghost" 
+                        size="sm" 
+                        className="ml-auto p-1 h-auto text-secondary hover:text-accent hover:bg-secondary/10 rounded-full"
+                        onClick={() => onCopyAddress(deployment.nonceContract.address)}
+                        aria-label="Copy NonceContract address"
+                      >
+                        <Copy className="h-4 w-4" />
+                      </Button>
+                    </div>
                   </div>
-                </div>
-              )}
-            </div>
-          </div>
-          
-          <div>
-            <h3 className="text-lg font-medium text-slate-200 mb-4">Deployment Details</h3>
-            <div className="bg-slate-900/50 rounded-lg p-4 border border-slate-700">
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <p className="text-xs text-slate-400 mb-1">Chain Key</p>
-                  <p className="text-sm font-medium text-slate-200">{deployment.chainKey}</p>
-                </div>
-                <div>
-                  <p className="text-xs text-slate-400 mb-1">EID</p>
-                  <p className="text-sm font-medium text-slate-200">{deployment.eid}</p>
-                </div>
-                <div>
-                  <p className="text-xs text-slate-400 mb-1">Stage</p>
-                  <p className="text-sm font-medium text-slate-200">{deployment.stage}</p>
-                </div>
-                <div>
-                  <p className="text-xs text-slate-400 mb-1">Version</p>
-                  <p className="text-sm font-medium text-slate-200">{deployment.version}</p>
-                </div>
-                <div>
-                  <p className="text-xs text-slate-400 mb-1">Status</p>
-                  <p className="text-sm font-medium text-green-400">Active</p>
-                </div>
-                <div>
-                  <p className="text-xs text-slate-400 mb-1">Data Source</p>
-                  <p className="text-sm font-medium text-slate-200">LayerZero API</p>
-                </div>
+                )}
               </div>
             </div>
           </div>
           
-          <div>
-            <h3 className="text-lg font-medium text-slate-200 mb-4">Additional Information</h3>
-            <div className="flex items-center bg-primary/10 rounded-lg p-4 border border-primary/30">
-              <Info className="text-accent h-5 w-5 mr-3 flex-shrink-0" />
-              <p className="text-sm text-slate-300">
-                This deployment data is fetched directly from the LayerZero API. The information shown here 
-                represents the current state of the LayerZero infrastructure for this chain.
-              </p>
+          {/* Deployment Details Panel */}
+          <div className="glass-panel p-5 space-y-4">
+            <h3 className="text-lg font-bold text-foreground flex items-center">
+              <div className="w-6 h-6 bg-accent/20 rounded-md flex items-center justify-center mr-2">
+                <Info className="text-accent h-4 w-4" />
+              </div>
+              Deployment Details
+            </h3>
+            
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-5">
+              <div className="p-3 rounded-lg bg-background/50 border border-secondary/10">
+                <p className="text-xs uppercase tracking-wider font-medium text-foreground/60 mb-2">Chain Key</p>
+                <p className="text-sm font-medium text-foreground/90">{deployment.chainKey}</p>
+              </div>
+              
+              <div className="p-3 rounded-lg bg-background/50 border border-secondary/10">
+                <p className="text-xs uppercase tracking-wider font-medium text-foreground/60 mb-2">EID</p>
+                <p className="text-sm font-mono font-medium text-primary">{deployment.eid}</p>
+              </div>
+              
+              <div className="p-3 rounded-lg bg-background/50 border border-secondary/10">
+                <p className="text-xs uppercase tracking-wider font-medium text-foreground/60 mb-2">Stage</p>
+                <p className="text-sm font-medium text-secondary">{deployment.stage}</p>
+              </div>
+              
+              <div className="p-3 rounded-lg bg-background/50 border border-secondary/10">
+                <p className="text-xs uppercase tracking-wider font-medium text-foreground/60 mb-2">Version</p>
+                <p className="text-sm font-mono font-medium text-accent">v{deployment.version}</p>
+              </div>
+              
+              <div className="p-3 rounded-lg bg-background/50 border border-secondary/10">
+                <p className="text-xs uppercase tracking-wider font-medium text-foreground/60 mb-2">Status</p>
+                <div className="flex items-center">
+                  <div className="h-2 w-2 rounded-full bg-success mr-1.5 animate-pulse"></div>
+                  <p className="text-sm font-medium text-success">Active</p>
+                </div>
+              </div>
+              
+              <div className="p-3 rounded-lg bg-background/50 border border-secondary/10">
+                <p className="text-xs uppercase tracking-wider font-medium text-foreground/60 mb-2">Data Source</p>
+                <p className="text-sm font-medium text-foreground/90">LayerZero API</p>
+              </div>
+            </div>
+          </div>
+          
+          {/* Additional Information Panel */}
+          <div className="bg-gradient-to-r from-primary/5 to-accent/5 rounded-xl p-5 border border-primary/10">
+            <div className="flex items-start gap-4">
+              <div className="h-8 w-8 rounded-full bg-accent/10 flex items-center justify-center flex-shrink-0 mt-0.5">
+                <Info className="text-accent h-5 w-5" />
+              </div>
+              <div>
+                <h4 className="font-medium text-base mb-2">About LayerZero Deployments</h4>
+                <p className="text-sm text-foreground/70 leading-relaxed">
+                  This deployment data is fetched directly from the LayerZero API. The addresses shown here
+                  represent the official smart contracts that make up the LayerZero infrastructure for {deployment.chainKey}.
+                  These contracts handle cross-chain messaging and are essential for building omnichain applications.
+                </p>
+              </div>
             </div>
           </div>
         </div>
         
-        <DialogFooter className="flex justify-end space-x-3">
-          <Button variant="outline" onClick={onClose}>
-            Close
-          </Button>
-          <Button asChild>
-            <a 
-              href={getExplorerUrl(deployment.chainKey, deployment.endpoint.address)} 
-              target="_blank" 
-              rel="noopener noreferrer"
-              className="bg-secondary hover:bg-secondary/90"
-            >
+        <DialogFooter className="px-6 py-4 border-t border-secondary/20 bg-background/50 flex flex-col sm:flex-row sm:justify-between gap-3">
+          <a 
+            href={getExplorerUrl(deployment.chainKey, deployment.endpoint.address)} 
+            target="_blank" 
+            rel="noopener noreferrer"
+            className="text-sm text-foreground/60 hover:text-foreground flex items-center transition-colors"
+          >
+            <ExternalLink className="h-3.5 w-3.5 mr-1.5" />
+            View on block explorer
+          </a>
+          
+          <div className="flex gap-3">
+            <Button variant="outline" onClick={onClose} className="border-secondary/20 bg-background/50">
+              Close
+            </Button>
+            <Button className="bg-primary hover:bg-primary-light text-white font-medium">
               <ExternalLink className="h-4 w-4 mr-2" />
               View in Explorer
-            </a>
-          </Button>
+            </Button>
+          </div>
         </DialogFooter>
       </DialogContent>
     </Dialog>
