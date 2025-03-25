@@ -44,7 +44,8 @@ export async function fetchLayerZeroDeployments(): Promise<ProcessedDeployment[]
               // Handle both v1 and v2 contract addresses
               // V1 contracts
               const endpoint = deployment.endpoint || null;
-              const relayerV2 = deployment.relayerV2 || null;
+              // Handle both relayerV2 and relayer (legacy support)
+              const relayerV2 = deployment.relayerV2 || deployment.relayer || null;
               const ultraLightNodeV2 = deployment.ultraLightNodeV2 || null;
               const sendUln301 = deployment.sendUln301 || null;
               const receiveUln301 = deployment.receiveUln301 || null;
@@ -57,7 +58,11 @@ export async function fetchLayerZeroDeployments(): Promise<ProcessedDeployment[]
               const executor = deployment.executor || null;
               
               // Determine which version to use based on available contracts
-              const version = deployment.version || (endpointV2 ? 2 : 1);
+              let version = deployment.version;
+              // If version is explicitly 0, make it 1 for UI purposes
+              if (version === 0) version = 1;
+              // If version is undefined, infer from available contracts
+              if (version === undefined) version = endpointV2 ? 2 : 1;
               
               // Create a deployment entry with safe property access
               processedData.push({
