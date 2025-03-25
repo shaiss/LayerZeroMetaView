@@ -86,7 +86,7 @@ export default function DeploymentCard({
             asChild
           >
             <a 
-              href={getExplorerUrl(deployment.chainKey, deployment.endpoint.address)} 
+              href={getExplorerUrl(deployment.chainKey, deployment.endpoint.address, deployment)} 
               target="_blank" 
               rel="noopener noreferrer"
               aria-label="View in Explorer"

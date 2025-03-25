@@ -84,7 +84,7 @@ export default function DetailModal({
               aria-label={`View ${label} in Explorer`}
             >
               <a 
-                href={getExplorerUrl(deployment.chainKey, contract.address)} 
+                href={getExplorerUrl(deployment.chainKey, contract.address, deployment)} 
                 target="_blank" 
                 rel="noopener noreferrer"
               >
