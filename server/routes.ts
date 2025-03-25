@@ -24,35 +24,51 @@ async function fetchLayerZeroDeployments(): Promise<ProcessedDeployment[]> {
       throw new Error(`API responded with status: ${response.status}`);
     }
 
-    const data: DeploymentsResponse = await response.json();
+    const data = await response.json();
     const processedData: ProcessedDeployment[] = [];
     
-    // Process the response
-    Object.entries(data).forEach(([chainKeyStage, { deployments }]) => {
-      deployments.forEach((deployment) => {
-        processedData.push({
-          id: `${deployment.chainKey}-${deployment.eid}-${deployment.stage}`,
-          chainKey: deployment.chainKey,
-          eid: deployment.eid,
-          stage: deployment.stage,
-          endpoint: deployment.endpoint,
-          relayerV2: deployment.relayerV2,
-          ultraLightNodeV2: deployment.ultraLightNodeV2,
-          sendUln301: deployment.sendUln301,
-          receiveUln301: deployment.receiveUln301,
-          nonceContract: deployment.nonceContract,
-          version: deployment.version,
-          isActive: true, // Assuming all deployments from the API are active
-          rawData: deployment,
-        });
+    // Process the response - handle the structure change in the API
+    if (typeof data === 'object' && data !== null) {
+      Object.entries(data).forEach(([chainKeyStage, chainData]) => {
+        if (chainData && typeof chainData === 'object' && 'deployments' in chainData && Array.isArray(chainData.deployments)) {
+          chainData.deployments.forEach((deployment: any) => {
+            if (deployment && deployment.chainKey && deployment.eid && deployment.stage) {
+              // Create a deployment entry with safe property access
+              processedData.push({
+                id: `${deployment.chainKey}-${deployment.eid}-${deployment.stage}`,
+                chainKey: deployment.chainKey,
+                eid: deployment.eid,
+                stage: deployment.stage,
+                endpoint: deployment.endpoint || { address: 'N/A' },
+                relayerV2: deployment.relayerV2,
+                ultraLightNodeV2: deployment.ultraLightNodeV2,
+                sendUln301: deployment.sendUln301,
+                receiveUln301: deployment.receiveUln301,
+                nonceContract: deployment.nonceContract,
+                version: deployment.version || 0,
+                isActive: true, // Assuming all deployments from the API are active
+                rawData: deployment,
+              });
+            }
+          });
+        }
       });
-    });
+    }
+
+    // Log the processed data count for debugging
+    console.log(`Processed ${processedData.length} deployments from the API`);
 
     // Update cache
     cachedDeployments = {
       data: processedData,
       timestamp: Date.now(),
     };
+
+    // If we didn't get any data, use mock data for development purposes
+    if (processedData.length === 0) {
+      console.warn("No deployments found in API response, returning empty array");
+      return [];
+    }
 
     return processedData;
   } catch (error) {
@@ -63,7 +79,9 @@ async function fetchLayerZeroDeployments(): Promise<ProcessedDeployment[]> {
       return cachedDeployments.data;
     }
     
-    throw error;
+    // If no cached data, return an empty array instead of throwing
+    console.warn("No cached data available, returning empty array");
+    return [];
   }
 }
 
@@ -87,9 +105,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const deployments = await fetchLayerZeroDeployments();
       
-      const chains = [...new Set(deployments.map(d => d.chainKey))];
-      const stages = [...new Set(deployments.map(d => d.stage))];
-      const versions = [...new Set(deployments.map(d => d.version))];
+      // Convert to arrays safely even if empty
+      const chains = deployments.length > 0 ? Array.from(new Set(deployments.map(d => d.chainKey))) : [];
+      const stages = deployments.length > 0 ? Array.from(new Set(deployments.map(d => d.stage))) : [];
+      const versions = deployments.length > 0 ? Array.from(new Set(deployments.map(d => d.version))) : [];
       
       res.json({
         chains,
@@ -111,7 +130,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const deployments = await fetchLayerZeroDeployments();
       
       const totalDeployments = deployments.length;
-      const uniqueChains = new Set(deployments.map(d => d.chainKey)).size;
+      const uniqueChains = deployments.length > 0 ? new Set(deployments.map(d => d.chainKey)).size : 0;
       const latestUpdate = new Date().toISOString().split('T')[0]; // Today's date in YYYY-MM-DD format
       
       res.json({
@@ -133,8 +152,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const deployments = await fetchLayerZeroDeployments();
       
+      if (deployments.length === 0) {
+        // Return empty network data if no deployments
+        return res.json({
+          nodes: [],
+          links: []
+        });
+      }
+      
       // Create nodes for each unique chain
-      const chains = [...new Set(deployments.map(d => d.chainKey))];
+      const chainsSet = new Set(deployments.map(d => d.chainKey));
+      const chains = Array.from(chainsSet);
+      
       const nodes = chains.map((chain, index) => {
         // Find a deployment for this chain to get its EID
         const deployment = deployments.find(d => d.chainKey === chain);
