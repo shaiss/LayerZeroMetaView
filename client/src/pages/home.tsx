@@ -35,7 +35,9 @@ export default function Home() {
   });
   const [sortBy, setSortBy] = useState<string>("chain");
   const [currentPage, setCurrentPage] = useState(1);
-  const deploymentPerPage = 9;
+  const [activeView, setActiveView] = useState<"grid" | "list" | "table">("grid");
+  const [showNetwork, setShowNetwork] = useState<boolean>(false);
+  const itemsPerPage = 12;
   
   const { toast } = useToast();
 
@@ -114,14 +116,14 @@ export default function Home() {
   });
   
   // Pagination
-  const indexOfLastDeployment = currentPage * deploymentPerPage;
-  const indexOfFirstDeployment = indexOfLastDeployment - deploymentPerPage;
+  const indexOfLastItem = currentPage * itemsPerPage;
+  const indexOfFirstItem = indexOfLastItem - itemsPerPage;
   const currentDeployments = sortedDeployments.slice(
-    indexOfFirstDeployment,
-    indexOfLastDeployment
+    indexOfFirstItem,
+    indexOfLastItem
   );
   
-  const totalPages = Math.ceil(sortedDeployments.length / deploymentPerPage);
+  const totalPages = Math.ceil(sortedDeployments.length / itemsPerPage);
   
   // Handlers
   const handleFilterChange = (type: 'chains' | 'stages' | 'versions', value: string | number) => {
