@@ -1,7 +1,6 @@
 import { Dialog, DialogContent, DialogHeader, DialogFooter, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Card } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { Network, X, ExternalLink, Copy, Info, CheckCircle, ArrowRight, Loader2 } from "lucide-react";
 import { ProcessedDeployment } from "@shared/types";
@@ -60,16 +59,40 @@ export default function DetailModal({
       <div className="p-3 rounded-lg bg-background/50 border border-secondary/10">
         <p className="text-xs uppercase tracking-wider font-medium text-foreground/60 mb-2">{label}</p>
         <div className="flex items-center">
-          <code className="text-sm font-mono text-foreground/80 break-all pr-2">{contract.address}</code>
-          <Button 
-            variant="ghost" 
-            size="sm" 
-            className="ml-auto p-1 h-auto text-secondary hover:text-accent hover:bg-secondary/10 rounded-full"
-            onClick={() => onCopyAddress(contract.address)}
-            aria-label={`Copy ${label} address`}
+          <a 
+            href={getExplorerUrl(deployment.chainKey, contract.address)} 
+            target="_blank" 
+            rel="noopener noreferrer"
+            className="text-sm font-mono text-foreground/80 hover:text-primary break-all pr-2 transition-colors"
           >
-            <Copy className="h-4 w-4" />
-          </Button>
+            {contract.address}
+          </a>
+          <div className="flex ml-auto">
+            <Button 
+              asChild
+              variant="ghost" 
+              size="sm" 
+              className="p-1 h-auto text-foreground/50 hover:text-accent hover:bg-secondary/10 rounded-full"
+              aria-label={`View ${label} in Explorer`}
+            >
+              <a 
+                href={getExplorerUrl(deployment.chainKey, contract.address)} 
+                target="_blank" 
+                rel="noopener noreferrer"
+              >
+                <ExternalLink className="h-3.5 w-3.5" />
+              </a>
+            </Button>
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              className="p-1 h-auto text-secondary hover:text-accent hover:bg-secondary/10 rounded-full"
+              onClick={() => onCopyAddress(contract.address)}
+              aria-label={`Copy ${label} address`}
+            >
+              <Copy className="h-4 w-4" />
+            </Button>
+          </div>
         </div>
       </div>
     );
@@ -83,7 +106,7 @@ export default function DetailModal({
           <div className="absolute top-0 right-0 w-40 h-40 bg-primary/10 blur-3xl rounded-full -mr-20 -mt-20 opacity-60"></div>
           <div className="absolute bottom-0 left-0 w-40 h-40 bg-accent/10 blur-3xl rounded-full -ml-20 -mb-20 opacity-60"></div>
           
-          <DialogHeader className="flex flex-row justify-between items-center relative z-10">
+          <div className="flex flex-row justify-between items-center relative z-10">
             <div className="flex items-center">
               <div className="h-14 w-14 relative mr-5">
                 <div className="absolute inset-0 rounded-xl bg-gradient-to-br from-primary via-secondary to-accent opacity-70 blur-[8px]"></div>
@@ -92,8 +115,8 @@ export default function DetailModal({
                 </div>
               </div>
               <div>
-                <DialogTitle className="text-2xl font-bold tracking-tight">{deployment.chainKey} Deployment</DialogTitle>
-                <DialogDescription className="text-foreground/70">
+                <h2 className="text-2xl font-bold tracking-tight">{deployment.chainKey} Deployment</h2>
+                <div className="text-foreground/70">
                   <div className="flex flex-wrap items-center gap-3 mt-1">
                     <div className="flex items-center">
                       <span className="text-sm font-mono font-medium">EID: {deployment.eid}</span>
@@ -116,14 +139,14 @@ export default function DetailModal({
                       </div>
                     )}
                   </div>
-                </DialogDescription>
+                </div>
               </div>
             </div>
             <Button variant="ghost" size="icon" onClick={onClose} className="rounded-full hover:bg-foreground/10">
               <X className="h-5 w-5" />
               <span className="sr-only">Close</span>
             </Button>
-          </DialogHeader>
+          </div>
         </div>
         
         {error && (
@@ -260,16 +283,8 @@ export default function DetailModal({
           </div>
         </div>
         
-        <DialogFooter className="px-6 py-4 border-t border-secondary/20 bg-background/50 flex flex-col sm:flex-row sm:justify-between gap-3">
-          <a 
-            href={getExplorerUrl(deployment.chainKey, deployment.endpoint.address)} 
-            target="_blank" 
-            rel="noopener noreferrer"
-            className="text-sm text-foreground/60 hover:text-foreground flex items-center transition-colors"
-          >
-            <ExternalLink className="h-3.5 w-3.5 mr-1.5" />
-            View on block explorer
-          </a>
+        <div className="px-6 py-4 border-t border-secondary/20 bg-background/50 flex flex-col sm:flex-row sm:justify-between gap-3">
+          <div className="flex flex-grow"></div>
           
           <div className="flex gap-3">
             <Button variant="outline" onClick={onClose} className="border-secondary/20 bg-background/50">
@@ -290,7 +305,7 @@ export default function DetailModal({
               </a>
             </Button>
           </div>
-        </DialogFooter>
+        </div>
       </DialogContent>
     </Dialog>
   );
