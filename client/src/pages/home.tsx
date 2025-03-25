@@ -48,23 +48,23 @@ export default function Home() {
     isLoading: isLoadingDeployments,
     error: deploymentsError,
     refetch: refetchDeployments
-  } = useQuery({ 
+  } = useQuery<ProcessedDeployment[]>({ 
     queryKey: ['/api/deployments'],
     staleTime: 5 * 60 * 1000, // 5 minutes
   });
 
   const { 
-    data: stats, 
+    data: stats = { totalDeployments: 0, uniqueChains: 0, latestUpdate: "" }, 
     isLoading: isLoadingStats
-  } = useQuery({ 
+  } = useQuery<{ totalDeployments: number, uniqueChains: number, latestUpdate: string }>({ 
     queryKey: ['/api/stats'],
     staleTime: 5 * 60 * 1000,
   });
 
   const { 
-    data: filterOptions, 
+    data: filterOptions = { chains: [], stages: [], versions: [] }, 
     isLoading: isLoadingFilterOptions
-  } = useQuery({ 
+  } = useQuery<{ chains: string[], stages: string[], versions: number[] }>({ 
     queryKey: ['/api/filter-options'],
     staleTime: 5 * 60 * 1000,
   });

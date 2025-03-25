@@ -3,9 +3,12 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
-import { Network, X, ExternalLink, Copy, Info, CheckCircle, ArrowRight } from "lucide-react";
+import { Network, X, ExternalLink, Copy, Info, CheckCircle, ArrowRight, Loader2 } from "lucide-react";
 import { ProcessedDeployment } from "@shared/types";
 import { truncateAddress, getExplorerUrl } from "@/lib/utils";
+import { useEffect, useState } from "react";
+import { fetchDeploymentById } from "@/lib/api";
+import { useToast } from "@/hooks/use-toast";
 
 interface DetailModalProps {
   deployment: ProcessedDeployment;
@@ -14,10 +17,63 @@ interface DetailModalProps {
 }
 
 export default function DetailModal({ 
-  deployment, 
+  deployment: initialDeployment, 
   onClose,
   onCopyAddress 
 }: DetailModalProps) {
+  // State to track the latest deployment data
+  const [deployment, setDeployment] = useState<ProcessedDeployment>(initialDeployment);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const { toast } = useToast();
+  
+  // Fetch the latest deployment data when the modal opens
+  useEffect(() => {
+    const fetchLatestData = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+        
+        const latestData = await fetchDeploymentById(initialDeployment.id);
+        setDeployment(latestData);
+      } catch (err) {
+        console.error("Error fetching latest deployment data:", err);
+        setError("Could not fetch the latest data. Showing cached version.");
+        toast({
+          title: "Data Refresh Failed",
+          description: "Could not fetch the latest deployment data. Showing cached version.",
+          variant: "destructive",
+        });
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    fetchLatestData();
+  }, [initialDeployment.id]);
+  
+  // Helper function to render contract address
+  const renderContractAddress = (label: string, contract: { address: string } | undefined) => {
+    if (!contract) return null;
+    
+    return (
+      <div className="p-3 rounded-lg bg-background/50 border border-secondary/10">
+        <p className="text-xs uppercase tracking-wider font-medium text-foreground/60 mb-2">{label}</p>
+        <div className="flex items-center">
+          <code className="text-sm font-mono text-foreground/80 break-all pr-2">{contract.address}</code>
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            className="ml-auto p-1 h-auto text-secondary hover:text-accent hover:bg-secondary/10 rounded-full"
+            onClick={() => onCopyAddress(contract.address)}
+            aria-label={`Copy ${label} address`}
+          >
+            <Copy className="h-4 w-4" />
+          </Button>
+        </div>
+      </div>
+    );
+  };
   
   return (
     <Dialog open={true} onOpenChange={onClose}>
@@ -52,6 +108,13 @@ export default function DetailModal({
                       <CheckCircle className="h-4 w-4" />
                       <span>Active</span>
                     </div>
+                    
+                    {loading && (
+                      <div className="flex items-center gap-1.5 text-primary text-xs">
+                        <Loader2 className="h-3 w-3 animate-spin" />
+                        <span>Refreshing data...</span>
+                      </div>
+                    )}
                   </div>
                 </DialogDescription>
               </div>
@@ -62,6 +125,12 @@ export default function DetailModal({
             </Button>
           </DialogHeader>
         </div>
+        
+        {error && (
+          <div className="mx-6 mt-6 p-3 bg-destructive/10 border border-destructive/20 rounded-lg text-sm text-destructive">
+            {error}
+          </div>
+        )}
         
         <div className="p-6 space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -75,57 +144,9 @@ export default function DetailModal({
               </h3>
               
               <div className="space-y-4">
-                <div className="p-3 rounded-lg bg-background/50 border border-secondary/10">
-                  <p className="text-xs uppercase tracking-wider font-medium text-foreground/60 mb-2">Endpoint</p>
-                  <div className="flex items-center">
-                    <code className="text-sm font-mono text-foreground/80 break-all pr-2">{deployment.endpoint.address}</code>
-                    <Button 
-                      variant="ghost" 
-                      size="sm" 
-                      className="ml-auto p-1 h-auto text-secondary hover:text-accent hover:bg-secondary/10 rounded-full"
-                      onClick={() => onCopyAddress(deployment.endpoint.address)}
-                      aria-label="Copy endpoint address"
-                    >
-                      <Copy className="h-4 w-4" />
-                    </Button>
-                  </div>
-                </div>
-                
-                {deployment.ultraLightNodeV2 && (
-                  <div className="p-3 rounded-lg bg-background/50 border border-secondary/10">
-                    <p className="text-xs uppercase tracking-wider font-medium text-foreground/60 mb-2">UltraLightNodeV2</p>
-                    <div className="flex items-center">
-                      <code className="text-sm font-mono text-foreground/80 break-all pr-2">{deployment.ultraLightNodeV2.address}</code>
-                      <Button 
-                        variant="ghost" 
-                        size="sm" 
-                        className="ml-auto p-1 h-auto text-secondary hover:text-accent hover:bg-secondary/10 rounded-full"
-                        onClick={() => onCopyAddress(deployment.ultraLightNodeV2.address)}
-                        aria-label="Copy UltraLightNodeV2 address"
-                      >
-                        <Copy className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </div>
-                )}
-                
-                {deployment.relayerV2 && (
-                  <div className="p-3 rounded-lg bg-background/50 border border-secondary/10">
-                    <p className="text-xs uppercase tracking-wider font-medium text-foreground/60 mb-2">RelayerV2</p>
-                    <div className="flex items-center">
-                      <code className="text-sm font-mono text-foreground/80 break-all pr-2">{deployment.relayerV2.address}</code>
-                      <Button 
-                        variant="ghost" 
-                        size="sm" 
-                        className="ml-auto p-1 h-auto text-secondary hover:text-accent hover:bg-secondary/10 rounded-full"
-                        onClick={() => onCopyAddress(deployment.relayerV2.address)}
-                        aria-label="Copy RelayerV2 address"
-                      >
-                        <Copy className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </div>
-                )}
+                {renderContractAddress("Endpoint", deployment.endpoint)}
+                {renderContractAddress("UltraLightNodeV2", deployment.ultraLightNodeV2)}
+                {renderContractAddress("RelayerV2", deployment.relayerV2)}
               </div>
             </div>
             
@@ -139,57 +160,13 @@ export default function DetailModal({
               </h3>
               
               <div className="space-y-4">
-                {deployment.sendUln301 && (
-                  <div className="p-3 rounded-lg bg-background/50 border border-secondary/10">
-                    <p className="text-xs uppercase tracking-wider font-medium text-foreground/60 mb-2">SendUln301</p>
-                    <div className="flex items-center">
-                      <code className="text-sm font-mono text-foreground/80 break-all pr-2">{deployment.sendUln301.address}</code>
-                      <Button 
-                        variant="ghost" 
-                        size="sm" 
-                        className="ml-auto p-1 h-auto text-secondary hover:text-accent hover:bg-secondary/10 rounded-full"
-                        onClick={() => onCopyAddress(deployment.sendUln301.address)}
-                        aria-label="Copy SendUln301 address"
-                      >
-                        <Copy className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </div>
-                )}
+                {renderContractAddress("SendUln301", deployment.sendUln301)}
+                {renderContractAddress("ReceiveUln301", deployment.receiveUln301)}
+                {renderContractAddress("NonceContract", deployment.nonceContract)}
                 
-                {deployment.receiveUln301 && (
-                  <div className="p-3 rounded-lg bg-background/50 border border-secondary/10">
-                    <p className="text-xs uppercase tracking-wider font-medium text-foreground/60 mb-2">ReceiveUln301</p>
-                    <div className="flex items-center">
-                      <code className="text-sm font-mono text-foreground/80 break-all pr-2">{deployment.receiveUln301.address}</code>
-                      <Button 
-                        variant="ghost" 
-                        size="sm" 
-                        className="ml-auto p-1 h-auto text-secondary hover:text-accent hover:bg-secondary/10 rounded-full"
-                        onClick={() => onCopyAddress(deployment.receiveUln301.address)}
-                        aria-label="Copy ReceiveUln301 address"
-                      >
-                        <Copy className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </div>
-                )}
-                
-                {deployment.nonceContract && (
-                  <div className="p-3 rounded-lg bg-background/50 border border-secondary/10">
-                    <p className="text-xs uppercase tracking-wider font-medium text-foreground/60 mb-2">NonceContract</p>
-                    <div className="flex items-center">
-                      <code className="text-sm font-mono text-foreground/80 break-all pr-2">{deployment.nonceContract.address}</code>
-                      <Button 
-                        variant="ghost" 
-                        size="sm" 
-                        className="ml-auto p-1 h-auto text-secondary hover:text-accent hover:bg-secondary/10 rounded-full"
-                        onClick={() => onCopyAddress(deployment.nonceContract.address)}
-                        aria-label="Copy NonceContract address"
-                      >
-                        <Copy className="h-4 w-4" />
-                      </Button>
-                    </div>
+                {!deployment.sendUln301 && !deployment.receiveUln301 && !deployment.nonceContract && (
+                  <div className="p-4 rounded-lg bg-background/20 border border-secondary/10 text-foreground/60 text-center">
+                    No send/receive contracts available for this deployment
                   </div>
                 )}
               </div>
@@ -274,9 +251,19 @@ export default function DetailModal({
             <Button variant="outline" onClick={onClose} className="border-secondary/20 bg-background/50">
               Close
             </Button>
-            <Button className="bg-primary hover:bg-primary-light text-white font-medium">
-              <ExternalLink className="h-4 w-4 mr-2" />
-              View in Explorer
+            <Button 
+              asChild
+              className="bg-primary hover:bg-primary-light text-white font-medium"
+              disabled={loading}
+            >
+              <a 
+                href={getExplorerUrl(deployment.chainKey, deployment.endpoint.address)} 
+                target="_blank" 
+                rel="noopener noreferrer"
+              >
+                <ExternalLink className="h-4 w-4 mr-2" />
+                View in Explorer
+              </a>
             </Button>
           </div>
         </DialogFooter>

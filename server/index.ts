@@ -1,6 +1,9 @@
 import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
+import { initializeDatabase } from "./db";
+import { storage } from "./storage";
+import { fetchLayerZeroDeployments } from "./layerzero";
 
 const app = express();
 app.use(express.json());
@@ -36,7 +39,49 @@ app.use((req, res, next) => {
   next();
 });
 
+// Data syncing function to periodically refresh cache
+async function syncDeploymentsData() {
+  try {
+    log("Starting LayerZero deployments sync", "sync");
+    const deployments = await fetchLayerZeroDeployments();
+    await storage.cacheDeployments(deployments);
+    log(`Synced ${deployments.length} deployments to database`, "sync");
+    
+    // Schedule next sync
+    setTimeout(syncDeploymentsData, 5 * 60 * 1000); // Every 5 minutes
+  } catch (error) {
+    console.error("Error syncing deployments:", error);
+    
+    // On error, retry after 1 minute
+    setTimeout(syncDeploymentsData, 60 * 1000);
+  }
+}
+
 (async () => {
+  // Initialize database
+  try {
+    // Import and run migrations - force it to create tables
+    const migrate = (await import('./migrate')).default;
+    await migrate();
+    log("Database migrations completed", "db");
+    
+    // Verify database initialization
+    const dbInitialized = await initializeDatabase();
+    if (!dbInitialized) {
+      log("Database initialization failed, retrying migration...", "db");
+      // Try migration again
+      await migrate();
+      await initializeDatabase();
+    }
+    log("Database initialized successfully", "db");
+    
+    // Start data sync process - populate the database with data
+    await syncDeploymentsData();
+    log("Initial data sync completed", "db");
+  } catch (error) {
+    console.error("Error initializing database:", error);
+  }
+
   const server = await registerRoutes(app);
 
   app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
