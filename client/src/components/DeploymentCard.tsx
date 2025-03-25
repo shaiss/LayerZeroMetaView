@@ -17,77 +17,64 @@ export default function DeploymentCard({
   onCopyAddress 
 }: DeploymentCardProps) {
   return (
-    <Card className="rounded-xl overflow-hidden border-slate-700 bg-slate-800/50 backdrop-blur-md animate-in fade-in">
-      <CardHeader className="flex flex-row items-center p-4 border-b border-slate-700">
-        <div className="h-10 w-10 rounded-full bg-gradient-to-r from-primary to-secondary flex items-center justify-center mr-3">
+    <Card className="rounded-xl overflow-hidden border-[1px] border-secondary/20 bg-background-dark/80 backdrop-blur-lg hover:shadow-lg hover:shadow-primary/5 transition-all duration-300">
+      <CardHeader className="flex flex-row items-center p-4 border-b border-secondary/10 bg-gradient-to-br from-background to-background-light/10">
+        <div className="h-12 w-12 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center mr-3 shadow-sm">
           <Network className="text-white h-5 w-5" />
         </div>
         <div>
-          <h3 className="font-medium text-lg">{deployment.chainKey}</h3>
+          <h3 className="font-bold text-lg tracking-tight">{deployment.chainKey}</h3>
           <div className="flex items-center">
-            <span className="text-xs text-slate-400 mr-2">EID: {deployment.eid}</span>
-            <Badge variant={deployment.stage === 'mainnet' ? 'default' : 'secondary'} className="bg-primary/20 text-primary hover:bg-primary/30">
+            <span className="text-xs text-foreground/70 mr-2 font-mono">EID: {deployment.eid}</span>
+            <Badge variant={deployment.stage === 'mainnet' ? 'default' : 'secondary'} 
+              className={deployment.stage === 'mainnet' 
+                ? "bg-accent/10 text-accent border-accent/20" 
+                : "bg-secondary/10 text-secondary border-secondary/20"}>
               {deployment.stage}
             </Badge>
           </div>
         </div>
       </CardHeader>
       
-      <CardContent className="p-4 space-y-3">
-        <div>
-          <p className="text-xs text-slate-400 mb-1">Endpoint</p>
+      <CardContent className="p-4 space-y-4 bg-gradient-to-b from-background-dark/60 to-background-dark/90">
+        <div className="p-3 rounded-lg bg-background/30 border border-secondary/10">
+          <p className="text-xs uppercase tracking-wider font-medium text-foreground/60 mb-2">Endpoint</p>
           <div className="flex items-center">
-            <p className="text-sm font-mono text-slate-200 truncate">{truncateAddress(deployment.endpoint.address)}</p>
+            <p className="text-sm font-mono font-medium text-foreground/80 truncate">{truncateAddress(deployment.endpoint.address)}</p>
             <Button 
               variant="ghost" 
               size="sm" 
-              className="ml-2 p-0 h-auto text-secondary hover:text-accent hover:bg-transparent"
+              className="ml-2 p-1 h-auto text-secondary hover:text-accent hover:bg-secondary/10 rounded-full"
               onClick={() => onCopyAddress(deployment.endpoint.address)}
+              aria-label="Copy endpoint address"
             >
               <Copy className="h-4 w-4" />
             </Button>
           </div>
         </div>
         
-        <div>
-          <p className="text-xs text-slate-400 mb-1">UltraLightNodeV2</p>
-          <div className="flex items-center">
-            <p className="text-sm font-mono text-slate-200 truncate">
-              {deployment.ultraLightNodeV2 
-                ? truncateAddress(deployment.ultraLightNodeV2.address) 
-                : 'N/A'}
-            </p>
-            {deployment.ultraLightNodeV2 && (
-              <Button 
-                variant="ghost" 
-                size="sm" 
-                className="ml-2 p-0 h-auto text-secondary hover:text-accent hover:bg-transparent"
-                onClick={() => onCopyAddress(deployment.ultraLightNodeV2!.address)}
-              >
-                <Copy className="h-4 w-4" />
-              </Button>
-            )}
+        <div className="grid grid-cols-2 gap-3">
+          <div className="p-3 rounded-lg bg-background/30 border border-secondary/10">
+            <p className="text-xs uppercase tracking-wider font-medium text-foreground/60 mb-2">Version</p>
+            <p className="text-sm font-mono font-medium text-accent">{deployment.version}</p>
           </div>
-        </div>
-        
-        <div className="flex space-x-4">
-          <div className="flex-1">
-            <p className="text-xs text-slate-400 mb-1">Version</p>
-            <p className="text-sm font-mono text-slate-200">{deployment.version}</p>
-          </div>
-          <div className="flex-1">
-            <p className="text-xs text-slate-400 mb-1">Chain Key</p>
-            <p className="text-sm font-mono text-slate-200">{deployment.chainKey}</p>
+          
+          <div className="p-3 rounded-lg bg-background/30 border border-secondary/10">
+            <p className="text-xs uppercase tracking-wider font-medium text-foreground/60 mb-2">Status</p>
+            <div className="flex items-center">
+              <div className="h-2 w-2 rounded-full bg-success mr-1.5 animate-pulse"></div>
+              <p className="text-sm font-medium text-success">Active</p>
+            </div>
           </div>
         </div>
       </CardContent>
       
-      <CardFooter className="p-4 border-t border-slate-700 flex justify-between items-center">
-        <div className="flex space-x-2">
+      <CardFooter className="p-4 border-t border-secondary/10 flex justify-between items-center bg-gradient-to-b from-background/40 to-background-dark/60">
+        <div className="flex space-x-3">
           <Button 
             variant="default" 
             size="sm" 
-            className="text-xs bg-primary hover:bg-primary/90 text-white border-primary font-medium"
+            className="bg-primary hover:bg-primary-light text-white font-medium drop-shadow transition-colors"
             onClick={() => onViewDetails(deployment)}
           >
             View Details
@@ -95,22 +82,23 @@ export default function DeploymentCard({
           <Button
             variant="outline"
             size="sm"
-            className="text-xs bg-slate-700 hover:bg-slate-600 text-slate-300 border-slate-600"
+            className="border-secondary/20 bg-secondary/5 hover:bg-secondary/10 text-secondary hover:text-secondary-light"
             asChild
           >
             <a 
               href={getExplorerUrl(deployment.chainKey, deployment.endpoint.address)} 
               target="_blank" 
               rel="noopener noreferrer"
+              aria-label="View in Explorer"
             >
-              <ExternalLink className="h-3 w-3 mr-1" />
+              <ExternalLink className="h-3.5 w-3.5 mr-1.5" />
               Explorer
             </a>
           </Button>
         </div>
-        <div className="flex items-center">
-          <div className="h-2 w-2 rounded-full bg-green-400 mr-1.5"></div>
-          <span className="text-xs text-green-400">Active</span>
+        
+        <div className="flex-shrink-0 px-2 py-1 rounded-full text-xs font-medium bg-accent/10 text-accent border border-accent/20">
+          EID: {deployment.eid}
         </div>
       </CardFooter>
     </Card>

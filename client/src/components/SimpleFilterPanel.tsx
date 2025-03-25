@@ -70,60 +70,76 @@ export default function SimpleFilterPanel({
   const toggleVersionFilter = () => setIsVersionFilterOpen(!isVersionFilterOpen);
   
   return (
-    <div className="space-y-4">
+    <div className="rounded-xl bg-gradient-to-r from-background/70 to-background-dark/70 backdrop-blur-lg border border-secondary/20 p-5 shadow-lg">
       {/* Search Input */}
-      <div className="relative">
+      <div className="relative mb-5">
+        <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+          <Search className="h-5 w-5 text-foreground/40" />
+        </div>
         <Input
           type="text"
           placeholder="Search chains, EIDs, addresses..." 
-          className="pl-10 font-mono text-sm bg-slate-800/50 border-slate-700"
+          className="pl-10 py-6 rounded-lg font-mono text-base bg-background/40 border-secondary/20 shadow-inner placeholder:text-foreground/40 focus:border-primary/30 focus:ring-primary/20"
           value={searchTerm}
           onChange={handleSearchChange}
         />
-        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400 h-4 w-4" />
       </div>
       
       {/* Filter Controls */}
-      <div className="flex flex-wrap gap-2">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
         {/* Chain Filter Button */}
         <div className="relative">
           <Button 
             variant="outline" 
-            size="sm" 
-            className="bg-slate-800/70 border-slate-700 text-slate-300"
+            size="default" 
+            className="w-full justify-between bg-background/40 border-secondary/20 text-foreground hover:bg-background-light/40 hover:text-foreground/90 focus:ring-1 focus:ring-primary/20"
             onClick={toggleChainFilter}
           >
-            Chain
-            {isChainFilterOpen ? <ChevronUp className="ml-2 h-4 w-4" /> : <ChevronDown className="ml-2 h-4 w-4" />}
+            <div className="flex items-center">
+              <div className="bg-primary/10 p-1 rounded mr-2">
+                <Filter className="h-4 w-4 text-primary" />
+              </div>
+              <span>Chain {activeFilters.chains.length > 0 && <span className="ml-1 text-xs bg-primary/20 text-primary px-1.5 py-0.5 rounded-full">{activeFilters.chains.length}</span>}</span>
+            </div>
+            {isChainFilterOpen ? <ChevronUp className="h-4 w-4 text-foreground/60" /> : <ChevronDown className="h-4 w-4 text-foreground/60" />}
           </Button>
           
           {isChainFilterOpen && (
-            <Card className="absolute mt-1 p-2 z-50 w-60 max-h-80 overflow-y-auto bg-slate-800/95 backdrop-blur-lg border-slate-700">
-              <Input
-                placeholder="Search chains..."
-                className="mb-2 text-sm bg-slate-700/50 border-slate-600"
-                value={chainSearch}
-                onChange={(e) => setChainSearch(e.target.value)}
-              />
-              <div className="space-y-1">
+            <Card className="absolute mt-1 p-3 z-50 w-full max-h-80 overflow-y-auto bg-background-dark/95 backdrop-blur-xl border border-secondary/30 rounded-lg shadow-xl">
+              <div className="relative mb-3">
+                <div className="absolute inset-y-0 left-0 pl-2.5 flex items-center pointer-events-none">
+                  <Search className="h-4 w-4 text-foreground/40" />
+                </div>
+                <Input
+                  placeholder="Search chains..."
+                  className="pl-8 text-sm bg-background/40 border-secondary/20 rounded-md"
+                  value={chainSearch}
+                  onChange={(e) => setChainSearch(e.target.value)}
+                />
+              </div>
+              <div className="space-y-1 max-h-52 overflow-y-auto custom-scrollbar pr-1">
                 {isLoading ? (
                   <>
-                    <Skeleton className="h-8 w-full" />
-                    <Skeleton className="h-8 w-full" />
-                    <Skeleton className="h-8 w-full" />
+                    <Skeleton className="h-8 w-full rounded-md" />
+                    <Skeleton className="h-8 w-full rounded-md" />
+                    <Skeleton className="h-8 w-full rounded-md" />
                   </>
                 ) : filteredChains.length === 0 ? (
-                  <p className="text-sm text-slate-400 p-2">No chains found</p>
+                  <p className="text-sm text-foreground/60 p-2 text-center">No chains found</p>
                 ) : (
                   filteredChains.map(chain => (
                     <div 
                       key={chain}
-                      className="flex items-center justify-between p-2 rounded hover:bg-slate-700/50 cursor-pointer"
+                      className="flex items-center justify-between p-2 rounded-md hover:bg-primary/5 cursor-pointer transition-colors"
                       onClick={() => onFilterChange('chains', chain)}
                     >
-                      <span className="text-sm">{chain}</span>
-                      {activeFilters.chains.includes(chain) && (
-                        <Check className="h-4 w-4 text-green-500" />
+                      <span className="text-sm font-medium">{chain}</span>
+                      {activeFilters.chains.includes(chain) ? (
+                        <div className="h-5 w-5 rounded-full bg-primary/20 flex items-center justify-center">
+                          <Check className="h-3 w-3 text-primary" />
+                        </div>
+                      ) : (
+                        <div className="h-5 w-5 rounded-full border border-secondary/20 bg-background/40"></div>
                       )}
                     </div>
                   ))
@@ -137,40 +153,54 @@ export default function SimpleFilterPanel({
         <div className="relative">
           <Button 
             variant="outline" 
-            size="sm" 
-            className="bg-slate-800/70 border-slate-700 text-slate-300"
+            size="default" 
+            className="w-full justify-between bg-background/40 border-secondary/20 text-foreground hover:bg-background-light/40 hover:text-foreground/90 focus:ring-1 focus:ring-secondary/20"
             onClick={toggleStageFilter}
           >
-            Stage
-            {isStageFilterOpen ? <ChevronUp className="ml-2 h-4 w-4" /> : <ChevronDown className="ml-2 h-4 w-4" />}
+            <div className="flex items-center">
+              <div className="bg-secondary/10 p-1 rounded mr-2">
+                <Filter className="h-4 w-4 text-secondary" />
+              </div>
+              <span>Stage {activeFilters.stages.length > 0 && <span className="ml-1 text-xs bg-secondary/20 text-secondary px-1.5 py-0.5 rounded-full">{activeFilters.stages.length}</span>}</span>
+            </div>
+            {isStageFilterOpen ? <ChevronUp className="h-4 w-4 text-foreground/60" /> : <ChevronDown className="h-4 w-4 text-foreground/60" />}
           </Button>
           
           {isStageFilterOpen && (
-            <Card className="absolute mt-1 p-2 z-50 w-48 max-h-80 overflow-y-auto bg-slate-800/95 backdrop-blur-lg border-slate-700">
-              <Input
-                placeholder="Search stages..."
-                className="mb-2 text-sm bg-slate-700/50 border-slate-600"
-                value={stageSearch}
-                onChange={(e) => setStageSearch(e.target.value)}
-              />
-              <div className="space-y-1">
+            <Card className="absolute mt-1 p-3 z-50 w-full max-h-80 overflow-y-auto bg-background-dark/95 backdrop-blur-xl border border-secondary/30 rounded-lg shadow-xl">
+              <div className="relative mb-3">
+                <div className="absolute inset-y-0 left-0 pl-2.5 flex items-center pointer-events-none">
+                  <Search className="h-4 w-4 text-foreground/40" />
+                </div>
+                <Input
+                  placeholder="Search stages..."
+                  className="pl-8 text-sm bg-background/40 border-secondary/20 rounded-md"
+                  value={stageSearch}
+                  onChange={(e) => setStageSearch(e.target.value)}
+                />
+              </div>
+              <div className="space-y-1 max-h-52 overflow-y-auto custom-scrollbar pr-1">
                 {isLoading ? (
                   <>
-                    <Skeleton className="h-8 w-full" />
-                    <Skeleton className="h-8 w-full" />
+                    <Skeleton className="h-8 w-full rounded-md" />
+                    <Skeleton className="h-8 w-full rounded-md" />
                   </>
                 ) : filteredStages.length === 0 ? (
-                  <p className="text-sm text-slate-400 p-2">No stages found</p>
+                  <p className="text-sm text-foreground/60 p-2 text-center">No stages found</p>
                 ) : (
                   filteredStages.map(stage => (
                     <div 
                       key={stage}
-                      className="flex items-center justify-between p-2 rounded hover:bg-slate-700/50 cursor-pointer"
+                      className="flex items-center justify-between p-2 rounded-md hover:bg-secondary/5 cursor-pointer transition-colors"
                       onClick={() => onFilterChange('stages', stage)}
                     >
-                      <span className="text-sm">{stage}</span>
-                      {activeFilters.stages.includes(stage) && (
-                        <Check className="h-4 w-4 text-green-500" />
+                      <span className="text-sm font-medium">{stage}</span>
+                      {activeFilters.stages.includes(stage) ? (
+                        <div className="h-5 w-5 rounded-full bg-secondary/20 flex items-center justify-center">
+                          <Check className="h-3 w-3 text-secondary" />
+                        </div>
+                      ) : (
+                        <div className="h-5 w-5 rounded-full border border-secondary/20 bg-background/40"></div>
                       )}
                     </div>
                   ))
@@ -184,40 +214,54 @@ export default function SimpleFilterPanel({
         <div className="relative">
           <Button 
             variant="outline" 
-            size="sm" 
-            className="bg-slate-800/70 border-slate-700 text-slate-300"
+            size="default" 
+            className="w-full justify-between bg-background/40 border-secondary/20 text-foreground hover:bg-background-light/40 hover:text-foreground/90 focus:ring-1 focus:ring-accent/20"
             onClick={toggleVersionFilter}
           >
-            Version
-            {isVersionFilterOpen ? <ChevronUp className="ml-2 h-4 w-4" /> : <ChevronDown className="ml-2 h-4 w-4" />}
+            <div className="flex items-center">
+              <div className="bg-accent/10 p-1 rounded mr-2">
+                <Filter className="h-4 w-4 text-accent" />
+              </div>
+              <span>Version {activeFilters.versions.length > 0 && <span className="ml-1 text-xs bg-accent/20 text-accent px-1.5 py-0.5 rounded-full">{activeFilters.versions.length}</span>}</span>
+            </div>
+            {isVersionFilterOpen ? <ChevronUp className="h-4 w-4 text-foreground/60" /> : <ChevronDown className="h-4 w-4 text-foreground/60" />}
           </Button>
           
           {isVersionFilterOpen && (
-            <Card className="absolute mt-1 p-2 z-50 w-48 max-h-80 overflow-y-auto bg-slate-800/95 backdrop-blur-lg border-slate-700">
-              <Input
-                placeholder="Search versions..."
-                className="mb-2 text-sm bg-slate-700/50 border-slate-600"
-                value={versionSearch}
-                onChange={(e) => setVersionSearch(e.target.value)}
-              />
-              <div className="space-y-1">
+            <Card className="absolute mt-1 p-3 z-50 w-full max-h-80 overflow-y-auto bg-background-dark/95 backdrop-blur-xl border border-secondary/30 rounded-lg shadow-xl">
+              <div className="relative mb-3">
+                <div className="absolute inset-y-0 left-0 pl-2.5 flex items-center pointer-events-none">
+                  <Search className="h-4 w-4 text-foreground/40" />
+                </div>
+                <Input
+                  placeholder="Search versions..."
+                  className="pl-8 text-sm bg-background/40 border-secondary/20 rounded-md"
+                  value={versionSearch}
+                  onChange={(e) => setVersionSearch(e.target.value)}
+                />
+              </div>
+              <div className="space-y-1 max-h-52 overflow-y-auto custom-scrollbar pr-1">
                 {isLoading ? (
                   <>
-                    <Skeleton className="h-8 w-full" />
-                    <Skeleton className="h-8 w-full" />
+                    <Skeleton className="h-8 w-full rounded-md" />
+                    <Skeleton className="h-8 w-full rounded-md" />
                   </>
                 ) : filteredVersions.length === 0 ? (
-                  <p className="text-sm text-slate-400 p-2">No versions found</p>
+                  <p className="text-sm text-foreground/60 p-2 text-center">No versions found</p>
                 ) : (
                   filteredVersions.map(version => (
                     <div 
                       key={version}
-                      className="flex items-center justify-between p-2 rounded hover:bg-slate-700/50 cursor-pointer"
+                      className="flex items-center justify-between p-2 rounded-md hover:bg-accent/5 cursor-pointer transition-colors"
                       onClick={() => onFilterChange('versions', version)}
                     >
-                      <span className="text-sm">v{version}</span>
-                      {activeFilters.versions.includes(version) && (
-                        <Check className="h-4 w-4 text-green-500" />
+                      <span className="text-sm font-medium font-mono">v{version}</span>
+                      {activeFilters.versions.includes(version) ? (
+                        <div className="h-5 w-5 rounded-full bg-accent/20 flex items-center justify-center">
+                          <Check className="h-3 w-3 text-accent" />
+                        </div>
+                      ) : (
+                        <div className="h-5 w-5 rounded-full border border-secondary/20 bg-background/40"></div>
                       )}
                     </div>
                   ))
@@ -226,75 +270,82 @@ export default function SimpleFilterPanel({
             </Card>
           )}
         </div>
+      </div>
+      
+      <div className="flex justify-between items-center">
+        {/* Active Filters Display */}
+        <div className="flex flex-wrap gap-2">
+          {activeFilterCount > 0 ? (
+            <>
+              {activeFilters.chains.map(chain => (
+                <Badge 
+                  key={`chain-${chain}`} 
+                  variant="outline"
+                  className="bg-primary/10 text-primary border-primary/20 hover:bg-primary/20 flex items-center gap-1 px-3 py-1 rounded-full"
+                >
+                  {chain}
+                  <button 
+                    onClick={() => onFilterChange('chains', chain)}
+                    className="ml-1 rounded-full hover:bg-primary/20 p-0.5"
+                    aria-label={`Remove ${chain} filter`}
+                  >
+                    <X className="h-3 w-3" />
+                  </button>
+                </Badge>
+              ))}
+              
+              {activeFilters.stages.map(stage => (
+                <Badge 
+                  key={`stage-${stage}`} 
+                  variant="outline"
+                  className="bg-secondary/10 text-secondary border-secondary/20 hover:bg-secondary/20 flex items-center gap-1 px-3 py-1 rounded-full"
+                >
+                  {stage}
+                  <button 
+                    onClick={() => onFilterChange('stages', stage)}
+                    className="ml-1 rounded-full hover:bg-secondary/20 p-0.5"
+                    aria-label={`Remove ${stage} filter`}
+                  >
+                    <X className="h-3 w-3" />
+                  </button>
+                </Badge>
+              ))}
+              
+              {activeFilters.versions.map(version => (
+                <Badge 
+                  key={`version-${version}`} 
+                  variant="outline"
+                  className="bg-accent/10 text-accent border-accent/20 hover:bg-accent/20 flex items-center gap-1 px-3 py-1 rounded-full"
+                >
+                  v{version}
+                  <button 
+                    onClick={() => onFilterChange('versions', version)}
+                    className="ml-1 rounded-full hover:bg-accent/20 p-0.5"
+                    aria-label={`Remove version ${version} filter`}
+                  >
+                    <X className="h-3 w-3" />
+                  </button>
+                </Badge>
+              ))}
+            </>
+          ) : (
+            <span className="text-sm text-foreground/60">No active filters</span>
+          )}
+        </div>
         
         {/* Clear Filters Button - Only shown when filters are active */}
         {activeFilterCount > 0 && (
           <Button 
-            variant="ghost" 
+            variant="outline" 
             size="sm" 
             onClick={onResetFilters}
-            className="text-red-400 hover:text-red-300 hover:bg-red-500/10"
+            className="text-foreground/70 border-secondary/20 bg-background/40 hover:bg-background-light/30 transition-colors"
           >
-            <X className="mr-1 h-4 w-4" />
-            Clear Filters
+            <X className="mr-1.5 h-4 w-4" />
+            Clear All
           </Button>
         )}
       </div>
-      
-      {/* Active Filters Display */}
-      {activeFilterCount > 0 && (
-        <div className="mt-3">
-          <div className="flex flex-wrap gap-2">
-            {activeFilters.chains.map(chain => (
-              <Badge 
-                key={`chain-${chain}`} 
-                variant="outline"
-                className="bg-primary/10 text-primary border-primary/20 hover:bg-primary/20 flex items-center gap-1"
-              >
-                {chain}
-                <button 
-                  onClick={() => onFilterChange('chains', chain)}
-                  className="ml-1 rounded-full hover:bg-primary/20 p-0.5"
-                >
-                  <X className="h-3 w-3" />
-                </button>
-              </Badge>
-            ))}
-            
-            {activeFilters.stages.map(stage => (
-              <Badge 
-                key={`stage-${stage}`} 
-                variant="outline"
-                className="bg-secondary/10 text-secondary border-secondary/20 hover:bg-secondary/20 flex items-center gap-1"
-              >
-                {stage}
-                <button 
-                  onClick={() => onFilterChange('stages', stage)}
-                  className="ml-1 rounded-full hover:bg-secondary/20 p-0.5"
-                >
-                  <X className="h-3 w-3" />
-                </button>
-              </Badge>
-            ))}
-            
-            {activeFilters.versions.map(version => (
-              <Badge 
-                key={`version-${version}`} 
-                variant="outline"
-                className="bg-accent/10 text-accent border-accent/20 hover:bg-accent/20 flex items-center gap-1"
-              >
-                v{version}
-                <button 
-                  onClick={() => onFilterChange('versions', version)}
-                  className="ml-1 rounded-full hover:bg-accent/20 p-0.5"
-                >
-                  <X className="h-3 w-3" />
-                </button>
-              </Badge>
-            ))}
-          </div>
-        </div>
-      )}
     </div>
   );
 }
