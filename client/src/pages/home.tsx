@@ -218,7 +218,7 @@ export default function Home() {
             <h1 className="text-3xl font-bold tracking-tight">
               <span className="text-accent font-bold">Layer</span>
               <span className="text-white/80">Zero</span>
-              <span className="ml-2 bg-gradient-to-r from-secondary to-accent bg-clip-text text-transparent">Explorer</span>
+              <span className="ml-2 bg-gradient-to-r from-secondary to-accent bg-clip-text text-transparent">Connected Chains</span>
             </h1>
           </div>
         </div>
