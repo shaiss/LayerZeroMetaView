@@ -85,9 +85,9 @@ export default function DeploymentCard({
       <CardFooter className="p-4 border-t border-slate-700 flex justify-between items-center">
         <div className="flex space-x-2">
           <Button 
-            variant="outline" 
+            variant="default" 
             size="sm" 
-            className="text-xs bg-secondary/20 hover:bg-secondary/30 text-secondary border-secondary/20"
+            className="text-xs bg-primary hover:bg-primary/90 text-white border-primary font-medium"
             onClick={() => onViewDetails(deployment)}
           >
             View Details
