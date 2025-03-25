@@ -194,8 +194,10 @@ export class DatabaseStorage implements IStorage {
     
     // Apply WHERE clause if any conditions
     if (conditions.length > 0) {
-      // @ts-ignore - TypeScript doesn't recognize sql template literals correctly
-      query = query.where(sql.and(...conditions));
+      // Apply each condition separately
+      conditions.forEach(condition => {
+        query = query.where(condition);
+      });
     }
     
     const dbDeployments = await query;
