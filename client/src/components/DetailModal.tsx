@@ -145,8 +145,12 @@ export default function DetailModal({
               
               <div className="space-y-4">
                 {renderContractAddress("Endpoint", deployment.endpoint)}
+                {deployment.version >= 2 && deployment.rawData?.endpointV2 && 
+                  renderContractAddress("EndpointV2", deployment.rawData.endpointV2)}
                 {renderContractAddress("UltraLightNodeV2", deployment.ultraLightNodeV2)}
                 {renderContractAddress("RelayerV2", deployment.relayerV2)}
+                {deployment.version >= 2 && deployment.rawData?.executor && 
+                  renderContractAddress("Executor", deployment.rawData.executor)}
               </div>
             </div>
             
@@ -160,13 +164,33 @@ export default function DetailModal({
               </h3>
               
               <div className="space-y-4">
-                {renderContractAddress("SendUln301", deployment.sendUln301)}
-                {renderContractAddress("ReceiveUln301", deployment.receiveUln301)}
-                {renderContractAddress("NonceContract", deployment.nonceContract)}
+                {deployment.version === 1 ? (
+                  <>
+                    {renderContractAddress("SendUln301", deployment.sendUln301)}
+                    {renderContractAddress("ReceiveUln301", deployment.receiveUln301)}
+                    {renderContractAddress("NonceContract", deployment.nonceContract)}
+                  </>
+                ) : (
+                  <>
+                    {renderContractAddress("SendUln302", deployment.rawData?.sendUln302)}
+                    {renderContractAddress("ReceiveUln302", deployment.rawData?.receiveUln302)}
+                    {renderContractAddress("BlockedMessageLib", deployment.rawData?.blockedMessageLib)}
+                    {renderContractAddress("LzExecutor", deployment.rawData?.lzExecutor)}
+                  </>
+                )}
                 
-                {!deployment.sendUln301 && !deployment.receiveUln301 && !deployment.nonceContract && (
+                {deployment.version === 1 && !deployment.sendUln301 && !deployment.receiveUln301 && !deployment.nonceContract && (
                   <div className="p-4 rounded-lg bg-background/20 border border-secondary/10 text-foreground/60 text-center">
                     No send/receive contracts available for this deployment
+                  </div>
+                )}
+                
+                {deployment.version === 2 && 
+                  !deployment.rawData?.sendUln302 && 
+                  !deployment.rawData?.receiveUln302 && 
+                  !deployment.rawData?.blockedMessageLib && (
+                  <div className="p-4 rounded-lg bg-background/20 border border-secondary/10 text-foreground/60 text-center">
+                    No send/receive contracts available for this v2 deployment
                   </div>
                 )}
               </div>

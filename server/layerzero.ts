@@ -41,25 +41,53 @@ export async function fetchLayerZeroDeployments(): Promise<ProcessedDeployment[]
           // Process each deployment
           deployments.forEach((deployment: any) => {
             if (deployment && deployment.eid) {
+              // Handle both v1 and v2 contract addresses
+              // V1 contracts
+              const endpoint = deployment.endpoint || null;
+              const relayerV2 = deployment.relayerV2 || null;
+              const ultraLightNodeV2 = deployment.ultraLightNodeV2 || null;
+              const sendUln301 = deployment.sendUln301 || null;
+              const receiveUln301 = deployment.receiveUln301 || null;
+              const nonceContract = deployment.nonceContract || null;
+              
+              // V2 contracts
+              const endpointV2 = deployment.endpointV2 || null;
+              const sendUln302 = deployment.sendUln302 || null;
+              const receiveUln302 = deployment.receiveUln302 || null;
+              const executor = deployment.executor || null;
+              
+              // Determine which version to use based on available contracts
+              const version = deployment.version || (endpointV2 ? 2 : 1);
+              
               // Create a deployment entry with safe property access
               processedData.push({
                 id: `${chainKey}-${deployment.eid}-${stage}`,
                 chainKey,
                 eid: deployment.eid,
                 stage,
-                endpoint: deployment.endpoint || { address: 'N/A' },
-                relayerV2: deployment.relayerV2,
-                ultraLightNodeV2: deployment.ultraLightNodeV2,
-                sendUln301: deployment.sendUln301,
-                receiveUln301: deployment.receiveUln301,
-                nonceContract: deployment.nonceContract,
-                version: deployment.version || 0,
+                endpoint: endpoint || endpointV2 || { address: 'N/A' }, // Use v2 endpoint if v1 not available
+                relayerV2,
+                ultraLightNodeV2,
+                sendUln301: sendUln301 || sendUln302, // Use v2 if v1 not available
+                receiveUln301: receiveUln301 || receiveUln302, // Use v2 if v1 not available
+                nonceContract,
+                version,
                 isActive: true, // Assuming all deployments from the API are active
                 rawData: {
                   ...deployment,
                   chainDetails: chainData.chainDetails || {},
                   dvns: chainData.dvns || {},
-                  blockExplorers: chainData.blockExplorers || []
+                  blockExplorers: chainData.blockExplorers || [],
+                  // Include v2 specific contracts in the raw data
+                  endpointV2,
+                  sendUln302,
+                  receiveUln302,
+                  executor,
+                  // Add chain-level metadata for display
+                  chainType: chainData.chainDetails?.chainType || '',
+                  nativeChainId: chainData.chainDetails?.nativeChainId || '',
+                  chainLayer: chainData.chainDetails?.chainLayer || '',
+                  nativeCurrency: chainData.chainDetails?.nativeCurrency || {},
                 },
               });
             }
