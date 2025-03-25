@@ -41,18 +41,40 @@ export function formatDate(dateString: string): string {
   }
 }
 
-// Get block explorer URL based on chain
-export function getExplorerUrl(chainKey: string, address: string): string {
-  const explorers: Record<string, string> = {
+// Get block explorer URL based on chain and deployment data
+export function getExplorerUrl(chainKey: string, address: string, deployment?: any): string {
+  // Fallback explorers if not found in raw data
+  const defaultExplorers: Record<string, string> = {
     ethereum: 'https://etherscan.io',
     arbitrum: 'https://arbiscan.io',
     polygon: 'https://polygonscan.com',
     optimism: 'https://optimistic.etherscan.io',
     avalanche: 'https://snowtrace.io',
     binance: 'https://bscscan.com',
-    // Add more chains as needed
+    bsc: 'https://bscscan.com',
+    xlayer: 'https://explorer.xlayer.xyz',
+    base: 'https://basescan.org',
+    linea: 'https://lineascan.build',
+    zksync: 'https://explorer.zksync.io',
   };
   
-  const baseUrl = explorers[chainKey.toLowerCase()] || 'https://etherscan.io';
+  // First try to get explorer from deployment raw data
+  let baseUrl;
+  
+  if (deployment && deployment.rawData && deployment.rawData.blockExplorers) {
+    const explorers = deployment.rawData.blockExplorers;
+    if (explorers.length > 0 && explorers[0].url) {
+      baseUrl = explorers[0].url;
+    }
+  }
+
+  // Fallback to default explorers
+  if (!baseUrl) {
+    baseUrl = defaultExplorers[chainKey.toLowerCase()] || 'https://etherscan.io';
+  }
+  
+  // Remove trailing slash if present
+  baseUrl = baseUrl.endsWith('/') ? baseUrl.slice(0, -1) : baseUrl;
+  
   return `${baseUrl}/address/${address}`;
 }
