@@ -51,21 +51,12 @@ async function migrate() {
     console.log('Created deployment index');
     
     console.log('Migration completed successfully');
+    return true;
   } catch (error) {
     console.error('Migration failed:', error);
     throw error; // Re-throw to ensure the caller knows migration failed
   }
 }
 
-// Run migration if this file is executed directly
-if (require.main === module) {
-  migrate().then(() => {
-    console.log('Migration script completed');
-    process.exit(0);
-  }).catch((error) => {
-    console.error('Migration script failed:', error);
-    process.exit(1);
-  });
-}
-
+// ES modules don't have require.main, removing this code since we'll call the function explicitly
 export default migrate;

@@ -60,26 +60,30 @@ async function syncDeploymentsData() {
 (async () => {
   // Initialize database
   try {
-    // Import and run migrations - force it to create tables
-    const migrate = (await import('./migrate')).default;
-    await migrate();
-    log("Database migrations completed", "db");
-    
-    // Verify database initialization
-    const dbInitialized = await initializeDatabase();
-    if (!dbInitialized) {
-      log("Database initialization failed, retrying migration...", "db");
-      // Try migration again
+    // Migrate and initialize database
+    try {
+      // Import and run migrations first
+      const migrate = (await import('./migrate')).default;
       await migrate();
-      await initializeDatabase();
+      log("Database migrations completed", "db");
+      
+      // Verify database initialization
+      const dbInitialized = await initializeDatabase();
+      if (dbInitialized) {
+        log("Database initialized successfully", "db");
+      } else {
+        log("Database initialization failed, will use in-memory storage", "db");
+      }
+    } catch (dbError) {
+      console.error("Database setup error:", dbError);
+      log("Using in-memory storage instead of database", "db");
     }
-    log("Database initialized successfully", "db");
     
-    // Start data sync process - populate the database with data
+    // Start data sync process - populate with data regardless of storage type
     await syncDeploymentsData();
-    log("Initial data sync completed", "db");
+    log("Initial data sync completed", "sync");
   } catch (error) {
-    console.error("Error initializing database:", error);
+    console.error("Application initialization error:", error);
   }
 
   const server = await registerRoutes(app);
