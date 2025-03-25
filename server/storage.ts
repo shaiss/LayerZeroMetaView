@@ -1,17 +1,10 @@
-import { users, deployments, type User, type InsertUser, type Deployment, type InsertDeployment } from "@shared/schema";
+import { deployments, type Deployment, type InsertDeployment } from "@shared/schema";
 import { ProcessedDeployment } from "@shared/types";
 import { db } from "./db";
 import { eq, and, desc, sql } from "drizzle-orm";
 
-// modify the interface with any CRUD methods
-// you might need
-
+// Storage interface for LayerZero API data
 export interface IStorage {
-  // User methods
-  getUser(id: number): Promise<User | undefined>;
-  getUserByUsername(username: string): Promise<User | undefined>;
-  createUser(user: InsertUser): Promise<User>;
-  
   // LayerZero deployments methods
   cacheDeployments(deployments: ProcessedDeployment[]): Promise<void>;
   getDeployments(): Promise<ProcessedDeployment[]>;
@@ -26,33 +19,12 @@ export interface IStorage {
 }
 
 export class MemStorage implements IStorage {
-  private users: Map<number, User>;
   private deployments: ProcessedDeployment[];
   private deploymentsTimestamp: number;
-  currentId: number;
 
   constructor() {
-    this.users = new Map();
     this.deployments = [];
     this.deploymentsTimestamp = 0;
-    this.currentId = 1;
-  }
-
-  async getUser(id: number): Promise<User | undefined> {
-    return this.users.get(id);
-  }
-
-  async getUserByUsername(username: string): Promise<User | undefined> {
-    return Array.from(this.users.values()).find(
-      (user) => user.username === username,
-    );
-  }
-
-  async createUser(insertUser: InsertUser): Promise<User> {
-    const id = this.currentId++;
-    const user: User = { ...insertUser, id };
-    this.users.set(id, user);
-    return user;
   }
   
   async cacheDeployments(deployments: ProcessedDeployment[]): Promise<void> {
@@ -109,21 +81,6 @@ export class MemStorage implements IStorage {
 export class DatabaseStorage implements IStorage {
   constructor() {
     console.log("Using DatabaseStorage for persistence");
-  }
-
-  async getUser(id: number): Promise<User | undefined> {
-    const [user] = await db.select().from(users).where(eq(users.id, id));
-    return user;
-  }
-
-  async getUserByUsername(username: string): Promise<User | undefined> {
-    const [user] = await db.select().from(users).where(eq(users.username, username));
-    return user;
-  }
-
-  async createUser(insertUser: InsertUser): Promise<User> {
-    const [user] = await db.insert(users).values(insertUser).returning();
-    return user;
   }
   
   async cacheDeployments(processedDeployments: ProcessedDeployment[]): Promise<void> {
@@ -258,6 +215,17 @@ export class DatabaseStorage implements IStorage {
   }
 }
 
-// For now, use MemStorage instead of DatabaseStorage until we get database working properly
-console.log("Using MemStorage for data storage (database integration in progress)");
-export const storage = new MemStorage();
+// Use DatabaseStorage for persistence
+// With fallback to MemStorage on initialization error
+let storageImplementation: IStorage;
+
+try {
+  console.log("Initializing database storage");
+  storageImplementation = new DatabaseStorage();
+} catch (error) {
+  console.error("Failed to initialize database storage:", error);
+  console.log("Falling back to in-memory storage");
+  storageImplementation = new MemStorage();
+}
+
+export const storage = storageImplementation;

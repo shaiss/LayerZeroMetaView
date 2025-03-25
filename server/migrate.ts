@@ -1,5 +1,5 @@
 import { db } from './db';
-import { deployments, users } from '@shared/schema';
+import { deployments } from '@shared/schema';
 import { sql } from 'drizzle-orm';
 import { pgTable, serial, text, jsonb, integer, boolean } from 'drizzle-orm/pg-core';
 
