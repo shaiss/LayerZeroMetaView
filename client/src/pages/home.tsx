@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { 
-  Search, Link, RefreshCw, ZoomIn, ZoomOut, X, 
+  Search, Link, RefreshCw, X, 
   ExternalLink, FileText, Copy, CheckCircle, List,
   Grid3x3, Table, Network, ChevronDown, Filter
 } from "lucide-react";
@@ -14,7 +14,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
-import NetworkGraph from "@/components/NetworkGraph";
+
 import DeploymentCard from "@/components/DeploymentCard";
 import DetailModal from "@/components/DetailModal";
 import SimpleFilterPanel from "@/components/SimpleFilterPanel";
@@ -37,7 +37,6 @@ export default function Home() {
   const [sortBy, setSortBy] = useState<string>("chain");
   const [currentPage, setCurrentPage] = useState(1);
   const [activeView, setActiveView] = useState<"grid" | "list" | "table">("grid");
-  const [showNetwork, setShowNetwork] = useState<boolean>(false);
   const itemsPerPage = 12;
   
   const { toast } = useToast();
@@ -318,34 +317,7 @@ export default function Home() {
           {/* Data View */}
           {!isLoadingDeployments && !deploymentsError && (
             <div>
-              {/* Network Visualization - Only show when toggled */}
-              {showNetwork && (
-                <Card className="mb-8 bg-slate-800/50 backdrop-blur-sm border-slate-700">
-                  <CardContent className="p-4">
-                    <div className="flex justify-between items-center mb-4">
-                      <h2 className="text-xl font-medium">Network Visualization</h2>
-                      <div className="flex gap-2">
-                        <Button variant="outline" size="sm" className="bg-slate-700">
-                          <ZoomIn className="mr-1 h-4 w-4" />
-                          Zoom In
-                        </Button>
-                        <Button variant="outline" size="sm" className="bg-slate-700">
-                          <ZoomOut className="mr-1 h-4 w-4" />
-                          Zoom Out
-                        </Button>
-                        <Button variant="outline" size="sm" className="bg-slate-700">
-                          <RefreshCw className="mr-1 h-4 w-4" />
-                          Reset
-                        </Button>
-                      </div>
-                    </div>
-                    
-                    <div className="relative h-80 w-full border border-slate-700 rounded-lg bg-background/50 overflow-hidden">
-                      <NetworkGraph />
-                    </div>
-                  </CardContent>
-                </Card>
-              )}
+
               
               {/* Connected Chains */}
               <div>
@@ -383,15 +355,6 @@ export default function Home() {
                     </div>
                   </div>
                   <div className="flex items-center gap-2">
-                    <Button 
-                      size="sm" 
-                      variant={showNetwork ? "default" : "outline"} 
-                      onClick={() => setShowNetwork(!showNetwork)}
-                      className={!showNetwork ? "bg-slate-800/50" : ""}
-                    >
-                      <Network className="h-4 w-4 mr-1" />
-                      {showNetwork ? "Hide Network" : "Show Network"}
-                    </Button>
                     <div className="flex items-center">
                       <span className="text-slate-400 text-sm mr-2">Sort:</span>
                       <select 
