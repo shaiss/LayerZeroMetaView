@@ -9,18 +9,7 @@ async function migrate() {
   try {
     // Drop tables if they exist (for clean migration during development)
     await db.execute(sql`DROP TABLE IF EXISTS deployments`);
-    await db.execute(sql`DROP TABLE IF EXISTS users`);
     console.log('Dropped existing tables');
-    
-    // Create users table with proper schema
-    await db.execute(sql`
-      CREATE TABLE IF NOT EXISTS users (
-        id SERIAL PRIMARY KEY,
-        username TEXT NOT NULL UNIQUE,
-        password TEXT NOT NULL
-      )
-    `);
-    console.log('Users table created');
     
     // Create deployments table with proper schema
     await db.execute(sql`

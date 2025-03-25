@@ -84,37 +84,43 @@ export class DatabaseStorage implements IStorage {
   }
   
   async cacheDeployments(processedDeployments: ProcessedDeployment[]): Promise<void> {
-    // Transform ProcessedDeployment[] to InsertDeployment[]
-    const deploymentsToInsert: InsertDeployment[] = processedDeployments.map(d => ({
-      chainKey: d.chainKey,
-      eid: d.eid,
-      stage: d.stage,
-      endpoint: d.endpoint,
-      relayerV2: d.relayerV2 || null,
-      ultraLightNodeV2: d.ultraLightNodeV2 || null,
-      sendUln301: d.sendUln301 || null,
-      receiveUln301: d.receiveUln301 || null,
-      nonceContract: d.nonceContract || null,
-      version: d.version,
-      timestamp: new Date().toISOString(),
-      isActive: d.isActive,
-      rawData: d.rawData
-    }));
-
-    // Use a transaction to ensure atomicity
-    await db.transaction(async (tx) => {
-      // Clear existing deployments
-      await tx.delete(deployments);
+    try {
+      console.log(`Caching ${processedDeployments.length} deployments to database`);
       
-      // Insert new deployments in batches of 100
-      const batchSize = 100;
+      // Transform ProcessedDeployment[] to InsertDeployment[]
+      const deploymentsToInsert: InsertDeployment[] = processedDeployments.map(d => ({
+        chainKey: d.chainKey,
+        eid: d.eid,
+        stage: d.stage,
+        endpoint: d.endpoint,
+        relayerV2: d.relayerV2 || null,
+        ultraLightNodeV2: d.ultraLightNodeV2 || null,
+        sendUln301: d.sendUln301 || null,
+        receiveUln301: d.receiveUln301 || null,
+        nonceContract: d.nonceContract || null,
+        version: d.version,
+        timestamp: new Date().toISOString(),
+        isActive: d.isActive,
+        rawData: d.rawData
+      }));
+
+      // Delete existing data without using transactions
+      await db.delete(deployments);
+      console.log("Cleared existing deployments");
+      
+      // Insert new deployments in batches of 20 (smaller batches for reliability)
+      const batchSize = 20;
       for (let i = 0; i < deploymentsToInsert.length; i += batchSize) {
         const batch = deploymentsToInsert.slice(i, i + batchSize);
-        await tx.insert(deployments).values(batch);
+        await db.insert(deployments).values(batch);
+        console.log(`Inserted batch ${i/batchSize + 1}/${Math.ceil(deploymentsToInsert.length/batchSize)}`);
       }
-    });
-    
-    console.log(`Cached ${deploymentsToInsert.length} deployments to database`);
+      
+      console.log(`Successfully cached ${deploymentsToInsert.length} deployments to database`);
+    } catch (error) {
+      console.error("Error in cacheDeployments:", error);
+      throw error;
+    }
   }
   
   async getDeployments(): Promise<ProcessedDeployment[]> {
