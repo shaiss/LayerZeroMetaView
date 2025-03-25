@@ -2,7 +2,8 @@ import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { 
   Search, Link, RefreshCw, ZoomIn, ZoomOut, X, 
-  ExternalLink, FileText, Copy, CheckCircle
+  ExternalLink, FileText, Copy, CheckCircle, List,
+  Grid3x3, Table, Network, ChevronDown, Filter
 } from "lucide-react";
 import { 
   Card, CardContent, CardFooter, CardHeader 
@@ -219,7 +220,7 @@ export default function Home() {
           <div className="relative w-full md:w-96">
             <Input
               type="text"
-              placeholder="Search deployments, chains, addresses..." 
+              placeholder="Search chains, EIDs, addresses..." 
               className="pl-10 font-mono text-sm bg-slate-800/50"
               value={searchTerm}
               onChange={handleSearchChange}
@@ -320,7 +321,7 @@ export default function Home() {
               <div className="space-y-3">
                 <Card className="bg-slate-800/50 backdrop-blur-sm border-slate-700">
                   <CardContent className="p-3">
-                    <p className="text-xs text-slate-400 mb-1">Total Deployments</p>
+                    <p className="text-xs text-slate-400 mb-1">Total Connected Chains</p>
                     <p className="text-xl font-medium text-accent">{stats?.totalDeployments || 0}</p>
                   </CardContent>
                 </Card>
@@ -362,7 +363,7 @@ export default function Home() {
             <Card className="p-8 rounded-xl text-center">
               <CardContent className="pt-6">
                 <X className="h-16 w-16 text-red-400 mx-auto mb-4" />
-                <h3 className="text-xl font-medium text-slate-200 mb-2">Unable to Load Deployment Data</h3>
+                <h3 className="text-xl font-medium text-slate-200 mb-2">Unable to Load Connected Chains</h3>
                 <p className="text-slate-400 mb-4">There was an error fetching data from the LayerZero API. Please try again later.</p>
                 <Button onClick={handleRetry} variant="secondary">
                   Try Again
@@ -374,48 +375,92 @@ export default function Home() {
           {/* Data View */}
           {!isLoadingDeployments && !deploymentsError && (
             <div>
-              {/* Network Visualization */}
-              <Card className="mb-8 bg-slate-800/50 backdrop-blur-sm border-slate-700">
-                <CardContent className="p-4">
-                  <div className="flex justify-between items-center mb-4">
-                    <h2 className="text-xl font-medium">Network Visualization</h2>
-                    <div className="flex gap-2">
-                      <Button variant="outline" size="sm" className="bg-slate-700">
-                        <ZoomIn className="mr-1 h-4 w-4" />
-                        Zoom In
+              {/* Network Visualization - Only show when toggled */}
+              {showNetwork && (
+                <Card className="mb-8 bg-slate-800/50 backdrop-blur-sm border-slate-700">
+                  <CardContent className="p-4">
+                    <div className="flex justify-between items-center mb-4">
+                      <h2 className="text-xl font-medium">Network Visualization</h2>
+                      <div className="flex gap-2">
+                        <Button variant="outline" size="sm" className="bg-slate-700">
+                          <ZoomIn className="mr-1 h-4 w-4" />
+                          Zoom In
+                        </Button>
+                        <Button variant="outline" size="sm" className="bg-slate-700">
+                          <ZoomOut className="mr-1 h-4 w-4" />
+                          Zoom Out
+                        </Button>
+                        <Button variant="outline" size="sm" className="bg-slate-700">
+                          <RefreshCw className="mr-1 h-4 w-4" />
+                          Reset
+                        </Button>
+                      </div>
+                    </div>
+                    
+                    <div className="relative h-80 w-full border border-slate-700 rounded-lg bg-background/50 overflow-hidden">
+                      <NetworkGraph />
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+              
+              {/* Connected Chains */}
+              <div>
+                <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-4 mb-6">
+                  <div className="flex items-center">
+                    <h2 className="text-xl font-medium mr-3">Connected Chains</h2>
+                    <div className="flex items-center gap-2">
+                      <Button 
+                        size="sm" 
+                        variant={activeView === "grid" ? "default" : "outline"} 
+                        onClick={() => setActiveView("grid")}
+                        className={activeView === "grid" ? "" : "bg-slate-800/50"}
+                      >
+                        <Grid3x3 className="h-4 w-4 mr-1" />
+                        Grid
                       </Button>
-                      <Button variant="outline" size="sm" className="bg-slate-700">
-                        <ZoomOut className="mr-1 h-4 w-4" />
-                        Zoom Out
+                      <Button 
+                        size="sm" 
+                        variant={activeView === "list" ? "default" : "outline"} 
+                        onClick={() => setActiveView("list")}
+                        className={activeView === "list" ? "" : "bg-slate-800/50"}
+                      >
+                        <List className="h-4 w-4 mr-1" />
+                        List
                       </Button>
-                      <Button variant="outline" size="sm" className="bg-slate-700">
-                        <RefreshCw className="mr-1 h-4 w-4" />
-                        Reset
+                      <Button 
+                        size="sm" 
+                        variant={activeView === "table" ? "default" : "outline"} 
+                        onClick={() => setActiveView("table")}
+                        className={activeView === "table" ? "" : "bg-slate-800/50"}
+                      >
+                        <Table className="h-4 w-4 mr-1" />
+                        Table
                       </Button>
                     </div>
                   </div>
-                  
-                  <div className="relative h-80 w-full border border-slate-700 rounded-lg bg-background/50 overflow-hidden">
-                    <NetworkGraph />
-                  </div>
-                </CardContent>
-              </Card>
-              
-              {/* Deployment Results */}
-              <div>
-                <div className="flex justify-between items-center mb-6">
-                  <h2 className="text-xl font-medium">Deployment Results</h2>
-                  <div className="flex items-center">
-                    <span className="text-slate-400 text-sm mr-2">Sort by:</span>
-                    <select 
-                      className="bg-slate-800 border border-slate-700 rounded py-1 px-2 text-sm font-mono text-slate-200 focus:outline-none focus:ring-1 focus:ring-accent"
-                      value={sortBy}
-                      onChange={handleSortChange}
+                  <div className="flex items-center gap-2">
+                    <Button 
+                      size="sm" 
+                      variant={showNetwork ? "default" : "outline"} 
+                      onClick={() => setShowNetwork(!showNetwork)}
+                      className={!showNetwork ? "bg-slate-800/50" : ""}
                     >
-                      <option value="chain">Chain</option>
-                      <option value="eid">EID</option>
-                      <option value="version">Version</option>
-                    </select>
+                      <Network className="h-4 w-4 mr-1" />
+                      {showNetwork ? "Hide Network" : "Show Network"}
+                    </Button>
+                    <div className="flex items-center">
+                      <span className="text-slate-400 text-sm mr-2">Sort:</span>
+                      <select 
+                        className="bg-slate-800 border border-slate-700 rounded py-1 px-2 text-sm font-mono text-slate-200 focus:outline-none focus:ring-1 focus:ring-accent"
+                        value={sortBy}
+                        onChange={handleSortChange}
+                      >
+                        <option value="chain">Chain</option>
+                        <option value="eid">EID</option>
+                        <option value="version">Version</option>
+                      </select>
+                    </div>
                   </div>
                 </div>
                 
@@ -423,7 +468,7 @@ export default function Home() {
                   <Card className="p-8 text-center">
                     <CardContent className="pt-6">
                       <FileText className="h-12 w-12 text-slate-400 mx-auto mb-4" />
-                      <h3 className="text-xl font-medium text-slate-200 mb-2">No deployments found</h3>
+                      <h3 className="text-xl font-medium text-slate-200 mb-2">No connected chains found</h3>
                       <p className="text-slate-400 mb-4">Try adjusting your filters or search criteria.</p>
                       <Button onClick={handleResetFilters} variant="secondary">
                         Reset Filters
@@ -431,16 +476,115 @@ export default function Home() {
                     </CardContent>
                   </Card>
                 ) : (
-                  <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-                    {currentDeployments.map((deployment) => (
-                      <DeploymentCard
-                        key={deployment.id}
-                        deployment={deployment}
-                        onViewDetails={handleViewDetails}
-                        onCopyAddress={handleCopyAddress}
-                      />
-                    ))}
-                  </div>
+                  <>
+                    {/* Grid View */}
+                    {activeView === "grid" && (
+                      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+                        {currentDeployments.map((deployment) => (
+                          <DeploymentCard
+                            key={deployment.id}
+                            deployment={deployment}
+                            onViewDetails={handleViewDetails}
+                            onCopyAddress={handleCopyAddress}
+                          />
+                        ))}
+                      </div>
+                    )}
+                    
+                    {/* List View */}
+                    {activeView === "list" && (
+                      <div className="space-y-3">
+                        {currentDeployments.map((deployment) => (
+                          <Card key={deployment.id} className="p-4 hover:bg-slate-800/70 transition-colors cursor-pointer">
+                            <div className="flex flex-wrap justify-between gap-4">
+                              <div>
+                                <h3 className="font-medium text-lg flex items-center">
+                                  {deployment.chainKey}
+                                  <Badge className="ml-2" variant="secondary">{deployment.stage}</Badge>
+                                </h3>
+                                <p className="text-slate-400 text-sm mb-2">EID: {deployment.eid} | v{deployment.version}</p>
+                                <p className="font-mono text-xs text-slate-300 flex items-center">
+                                  {truncateAddress(deployment.endpoint.address)}
+                                  <Button 
+                                    size="sm" 
+                                    variant="ghost" 
+                                    className="h-6 w-6 p-0 ml-1"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      handleCopyAddress(deployment.endpoint.address);
+                                    }}
+                                  >
+                                    <Copy className="h-3 w-3" />
+                                  </Button>
+                                </p>
+                              </div>
+                              <div className="flex items-center">
+                                <Button
+                                  variant="outline" 
+                                  size="sm"
+                                  onClick={() => handleViewDetails(deployment)}
+                                >
+                                  View Details
+                                </Button>
+                              </div>
+                            </div>
+                          </Card>
+                        ))}
+                      </div>
+                    )}
+                    
+                    {/* Table View */}
+                    {activeView === "table" && (
+                      <div className="overflow-x-auto">
+                        <table className="w-full border-collapse">
+                          <thead>
+                            <tr className="border-b border-slate-700 bg-slate-800/50">
+                              <th className="text-left py-3 px-4 font-medium">Chain</th>
+                              <th className="text-left py-3 px-4 font-medium">EID</th>
+                              <th className="text-left py-3 px-4 font-medium">Stage</th>
+                              <th className="text-left py-3 px-4 font-medium">Version</th>
+                              <th className="text-left py-3 px-4 font-medium">Endpoint</th>
+                              <th className="text-center py-3 px-4 font-medium">Actions</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {currentDeployments.map((deployment) => (
+                              <tr key={deployment.id} className="border-b border-slate-700 hover:bg-slate-800/50 transition-colors">
+                                <td className="py-3 px-4">{deployment.chainKey}</td>
+                                <td className="py-3 px-4">{deployment.eid}</td>
+                                <td className="py-3 px-4">
+                                  <Badge variant="secondary">{deployment.stage}</Badge>
+                                </td>
+                                <td className="py-3 px-4">v{deployment.version}</td>
+                                <td className="py-3 px-4 font-mono text-xs">
+                                  <div className="flex items-center">
+                                    {truncateAddress(deployment.endpoint.address)}
+                                    <Button 
+                                      size="sm" 
+                                      variant="ghost" 
+                                      className="h-6 w-6 p-0 ml-1"
+                                      onClick={() => handleCopyAddress(deployment.endpoint.address)}
+                                    >
+                                      <Copy className="h-3 w-3" />
+                                    </Button>
+                                  </div>
+                                </td>
+                                <td className="py-3 px-4 text-center">
+                                  <Button
+                                    variant="outline" 
+                                    size="sm"
+                                    onClick={() => handleViewDetails(deployment)}
+                                  >
+                                    View Details
+                                  </Button>
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    )}
+                  </>
                 )}
                 
                 {/* Pagination */}
