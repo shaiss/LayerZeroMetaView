@@ -64,6 +64,23 @@ export default function SimpleFilterPanel({
     onSearchChange(e.target.value);
   };
   
+  // Handle chain selection with better logging
+  const handleChainSelect = (chain: string) => {
+    console.log(`Selecting chain: ${chain}`);
+    console.log(`Current active chains: ${activeFilters.chains.join(', ')}`);
+    
+    // Force UI update after selection
+    setChainSearch('');
+    onFilterChange('chains', chain);
+    
+    // Keep dropdown open for better UX
+    setTimeout(() => {
+      console.log(`Updated active chains: ${activeFilters.chains.includes(chain) ? 
+        activeFilters.chains.filter(c => c !== chain).join(', ') : 
+        [...activeFilters.chains, chain].join(', ')}`);
+    }, 100);
+  };
+  
   // Toggle filters
   const toggleChainFilter = () => setIsChainFilterOpen(!isChainFilterOpen);
   const toggleStageFilter = () => setIsStageFilterOpen(!isStageFilterOpen);
@@ -131,7 +148,7 @@ export default function SimpleFilterPanel({
                     <div 
                       key={chain}
                       className="flex items-center justify-between p-2 rounded-md hover:bg-primary/5 cursor-pointer transition-colors"
-                      onClick={() => onFilterChange('chains', chain)}
+                      onClick={() => handleChainSelect(chain)}
                     >
                       <span className="text-sm font-medium">{chain}</span>
                       {activeFilters.chains.includes(chain) ? (

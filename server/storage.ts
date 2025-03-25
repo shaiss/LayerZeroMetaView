@@ -168,45 +168,55 @@ export class DatabaseStorage implements IStorage {
     versions?: number[];
     searchTerm?: string;
   }): Promise<ProcessedDeployment[]> {
-    let query = db.select().from(deployments);
-    
-    // Apply filters
+    // Build database filters as SQL conditions
     const conditions = [];
     
+    // Add chain filter
     if (filters.chains && filters.chains.length > 0) {
-      conditions.push(sql`${deployments.chainKey} IN (${filters.chains.join(',')})`);
+      conditions.push(sql`${deployments.chainKey} IN (${sql.join(filters.chains, sql`, `)})`);
     }
     
+    // Add stage filter
     if (filters.stages && filters.stages.length > 0) {
-      conditions.push(sql`${deployments.stage} IN (${filters.stages.join(',')})`);
+      conditions.push(sql`${deployments.stage} IN (${sql.join(filters.stages, sql`, `)})`);
     }
     
+    // Add version filter
     if (filters.versions && filters.versions.length > 0) {
-      conditions.push(sql`${deployments.version} IN (${filters.versions.join(',')})`);
+      conditions.push(sql`${deployments.version} IN (${sql.join(filters.versions.map(v => v.toString()), sql`, `)})`);
     }
     
-    if (filters.searchTerm) {
+    // Add search term filter
+    if (filters.searchTerm && filters.searchTerm.trim() !== '') {
       const searchTerm = `%${filters.searchTerm}%`;
       conditions.push(
-        sql`${deployments.chainKey} ILIKE ${searchTerm} OR 
+        sql`(${deployments.chainKey} ILIKE ${searchTerm} OR 
             ${deployments.eid} ILIKE ${searchTerm} OR 
-            ${deployments.stage} ILIKE ${searchTerm}`
+            ${deployments.stage} ILIKE ${searchTerm})`
       );
     }
     
-    // Apply WHERE clause if any conditions
+    // Execute query with appropriate conditions
+    let dbDeployments;
     if (conditions.length > 0) {
-      // Combine all conditions with AND logic
-      const combinedCondition = conditions.reduce((acc, curr) => 
-        acc ? sql`${acc} AND ${curr}` : curr, null as any);
-      
-      if (combinedCondition) {
-        query = query.where(combinedCondition);
-      }
+      // Combine all conditions with AND
+      const whereCondition = conditions.reduce((combined, condition) => 
+        sql`${combined} AND ${condition}`);
+        
+      dbDeployments = await db.select()
+        .from(deployments)
+        .where(whereCondition)
+        .orderBy(deployments.chainKey);
+    } else {
+      // No filters, get all records
+      dbDeployments = await db.select()
+        .from(deployments)
+        .orderBy(deployments.chainKey);
     }
     
-    // Add consistent ordering
-    const dbDeployments = await query.orderBy(deployments.chainKey);
+    console.log(`Found ${dbDeployments.length} deployments with filters:`, JSON.stringify(filters));
+    
+    // Convert database records to application models
     return dbDeployments.map(this.mapDbDeploymentToProcessed);
   }
 
