@@ -124,7 +124,9 @@ export class DatabaseStorage implements IStorage {
   }
   
   async getDeployments(): Promise<ProcessedDeployment[]> {
-    const dbDeployments = await db.select().from(deployments);
+    // Add orderBy to ensure consistent results
+    const dbDeployments = await db.select().from(deployments)
+      .orderBy(deployments.chainKey);
     
     // Transform Deployment[] to ProcessedDeployment[]
     return dbDeployments.map(this.mapDbDeploymentToProcessed);
@@ -153,7 +155,7 @@ export class DatabaseStorage implements IStorage {
 
   async getDeploymentsBatch(offset: number, limit: number): Promise<ProcessedDeployment[]> {
     const dbDeployments = await db.select().from(deployments)
-      .orderBy(desc(deployments.timestamp))
+      .orderBy(deployments.chainKey)
       .limit(limit)
       .offset(offset);
     
@@ -194,14 +196,17 @@ export class DatabaseStorage implements IStorage {
     
     // Apply WHERE clause if any conditions
     if (conditions.length > 0) {
-      // Apply each condition separately
-      conditions.forEach(condition => {
-        // Use as any to bypass type checking for the condition
-        query = query.where(condition as any);
-      });
+      // Combine all conditions with AND logic
+      const combinedCondition = conditions.reduce((acc, curr) => 
+        acc ? sql`${acc} AND ${curr}` : curr, null as any);
+      
+      if (combinedCondition) {
+        query = query.where(combinedCondition);
+      }
     }
     
-    const dbDeployments = await query;
+    // Add consistent ordering
+    const dbDeployments = await query.orderBy(deployments.chainKey);
     return dbDeployments.map(this.mapDbDeploymentToProcessed);
   }
 
