@@ -16,7 +16,7 @@ export async function fetchLayerZeroDeployments(): Promise<ProcessedDeployment[]
   }
 
   try {
-    const response = await fetch("https://metadata.layerzero-api.com/v1/metadata/deployments");
+    const response = await fetch("https://metadata.layerzero-api.com/v1/metadata");
     if (!response.ok) {
       throw new Error(`API responded with status: ${response.status}`);
     }
