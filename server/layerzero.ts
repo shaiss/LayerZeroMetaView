@@ -16,26 +16,40 @@ export async function fetchLayerZeroDeployments(): Promise<ProcessedDeployment[]
   }
 
   try {
-    const response = await fetch("https://metadata.layerzero-api.com/v1/metadata");
-    if (!response.ok) {
-      throw new Error(`API responded with status: ${response.status}`);
+    // Fetch both the metadata and deployments endpoints for complete data
+    const metadataResponse = await fetch("https://metadata.layerzero-api.com/v1/metadata");
+    if (!metadataResponse.ok) {
+      throw new Error(`Metadata API responded with status: ${metadataResponse.status}`);
     }
 
-    const data = await response.json();
+    const metadataData = await metadataResponse.json();
     const processedData: ProcessedDeployment[] = [];
     
-    // Process the response using the base metadata endpoint format
-    if (typeof data === 'object' && data !== null) {
-      // The base metadata endpoint returns an object where keys are chainKeyStage (e.g., "ethereum", "bsc-testnet")
-      // Each value contains network information and deployments
-      Object.entries(data).forEach(([chainKeyStage, chainData]: [string, any]) => {
-        // Extract chain info
+    // Process the response using the metadata endpoint format
+    if (typeof metadataData === 'object' && metadataData !== null) {
+      // The metadata endpoint returns a more complex structure with chainKeys as primary keys
+      Object.entries(metadataData).forEach(([chainKeyStage, chainData]: [string, any]) => {
         if (chainData && typeof chainData === 'object') {
-          // Each entry contains deployments and chain details
-          const chainKey = chainKeyStage.split('-')[0]; // Extract base chain name
-          const stage = chainKeyStage.includes('-') ? chainKeyStage.split('-').slice(1).join('-') : 'mainnet'; // Default to mainnet if no stage specified
+          // Parse chainKey and stage from the key
+          // For mainnet chains, the key is just the chainKey (e.g., "ethereum")
+          // For testnet chains, the key is chainKey-stage (e.g., "ethereum-testnet")
+          let chainKey, stage;
           
-          // Get deployments array if it exists, otherwise use empty array
+          if (chainKeyStage.includes('-')) {
+            const parts = chainKeyStage.split('-');
+            chainKey = parts[0];
+            stage = parts.slice(1).join('-');
+          } else {
+            chainKey = chainKeyStage;
+            stage = 'mainnet'; // Default for keys without explicit stage
+          }
+          
+          // Extract chain details and block explorers
+          const chainDetails = chainData.chainDetails || {};
+          const blockExplorers = chainData.blockExplorers || [];
+          const dvns = chainData.dvns || {};
+          
+          // Get deployments array
           const deployments = chainData.deployments || [];
           
           // Process each deployment
@@ -80,19 +94,21 @@ export async function fetchLayerZeroDeployments(): Promise<ProcessedDeployment[]
                 isActive: true, // Assuming all deployments from the API are active
                 rawData: {
                   ...deployment,
-                  chainDetails: chainData.chainDetails || {},
-                  dvns: chainData.dvns || {},
-                  blockExplorers: chainData.blockExplorers || [],
+                  chainKey,
+                  stage,
+                  chainDetails,
+                  dvns,
+                  blockExplorers,
                   // Include v2 specific contracts in the raw data
                   endpointV2,
                   sendUln302,
                   receiveUln302,
                   executor,
                   // Add chain-level metadata for display
-                  chainType: chainData.chainDetails?.chainType || '',
-                  nativeChainId: chainData.chainDetails?.nativeChainId || '',
-                  chainLayer: chainData.chainDetails?.chainLayer || '',
-                  nativeCurrency: chainData.chainDetails?.nativeCurrency || {},
+                  chainType: chainDetails?.chainType || '',
+                  nativeChainId: chainDetails?.nativeChainId || '',
+                  chainLayer: chainDetails?.chainLayer || '',
+                  nativeCurrency: chainDetails?.nativeCurrency || {},
                 },
               });
             }

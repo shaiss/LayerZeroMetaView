@@ -43,6 +43,10 @@ export function formatDate(dateString: string): string {
 
 // Get block explorer URL based on chain and deployment data
 export function getExplorerUrl(chainKey: string, address: string, deployment?: any): string {
+  if (!address || address === 'N/A') {
+    return '#';
+  }
+  
   // Fallback explorers if not found in raw data
   const defaultExplorers: Record<string, string> = {
     ethereum: 'https://etherscan.io',
@@ -56,25 +60,75 @@ export function getExplorerUrl(chainKey: string, address: string, deployment?: a
     base: 'https://basescan.org',
     linea: 'https://lineascan.build',
     zksync: 'https://explorer.zksync.io',
+    mantle: 'https://explorer.mantle.xyz',
+    scroll: 'https://scrollscan.com',
+    metis: 'https://andromeda-explorer.metis.io',
+    mode: 'https://explorer.mode.network',
+    blast: 'https://blastscan.io',
+    fraxtal: 'https://fraxscan.com',
+    sei: 'https://www.seiscan.app',
+    aptos: 'https://explorer.aptoslabs.com',
+    sui: 'https://suivision.xyz',
+    moonbeam: 'https://moonbeam.moonscan.io',
+    gnosis: 'https://gnosisscan.io',
+    celo: 'https://celoscan.io',
+    harmony: 'https://explorer.harmony.one',
+    fantom: 'https://ftmscan.com',
+    aurora: 'https://explorer.aurora.dev',
+    tron: 'https://tronscan.org',
+    kava: 'https://explorer.kava.io',
+    fuse: 'https://explorer.fuse.io',
+    klaytn: 'https://scope.klaytn.com',
+    canto: 'https://cantoscan.io',
+    polygon_zkevm: 'https://zkevm.polygonscan.com',
+    astar: 'https://astar.subscan.io',
+    manta: 'https://pacific-explorer.manta.network',
+    merlin: 'https://scan.merlinchain.io',
+    telos: 'https://explorer.telos.net',
   };
   
-  // First try to get explorer from deployment raw data
+  // Try to get explorer from deployment raw data
   let baseUrl;
   
-  if (deployment && deployment.rawData && deployment.rawData.blockExplorers) {
-    const explorers = deployment.rawData.blockExplorers;
-    if (explorers.length > 0 && explorers[0].url) {
-      baseUrl = explorers[0].url;
+  if (deployment && deployment.rawData) {
+    // First, try to use blockExplorers from the chain metadata
+    if (deployment.rawData.blockExplorers && Array.isArray(deployment.rawData.blockExplorers)) {
+      const blockExplorers = deployment.rawData.blockExplorers;
+      if (blockExplorers.length > 0 && blockExplorers[0].url) {
+        baseUrl = blockExplorers[0].url;
+      }
+    }
+    
+    // If not found in blockExplorers, try chainDetails.blockExplorer property
+    if (!baseUrl && deployment.rawData.chainDetails && deployment.rawData.chainDetails.blockExplorer) {
+      baseUrl = deployment.rawData.chainDetails.blockExplorer;
+    }
+    
+    // If not found, check if there's an explorer URL in the raw data
+    if (!baseUrl && deployment.rawData.explorerUrl) {
+      baseUrl = deployment.rawData.explorerUrl;
     }
   }
 
-  // Fallback to default explorers
+  // Fallback to default explorers if still not found
   if (!baseUrl) {
-    baseUrl = defaultExplorers[chainKey.toLowerCase()] || 'https://etherscan.io';
+    // Normalize chainKey (remove testnet suffixes for explorer URL lookup)
+    let normalizedChainKey = chainKey.toLowerCase();
+    if (normalizedChainKey.includes('-')) {
+      normalizedChainKey = normalizedChainKey.split('-')[0];
+    }
+    
+    baseUrl = defaultExplorers[normalizedChainKey] || 'https://etherscan.io';
   }
   
   // Remove trailing slash if present
   baseUrl = baseUrl.endsWith('/') ? baseUrl.slice(0, -1) : baseUrl;
   
-  return `${baseUrl}/address/${address}`;
+  // Handle different explorer formats (some use /address, others use /accounts)
+  const urlPath = baseUrl.includes('aptoslabs') ? 'account' : 
+                  baseUrl.includes('subscan') ? 'account' :
+                  baseUrl.includes('suivision') ? 'address-details' :
+                  'address';
+  
+  return `${baseUrl}/${urlPath}/${address}`;
 }

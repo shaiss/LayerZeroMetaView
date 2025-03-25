@@ -54,13 +54,21 @@ export default function DetailModal({
   // Helper function to render contract address
   const renderContractAddress = (label: string, contract: { address: string } | undefined) => {
     if (!contract) return null;
+    if (contract.address === 'N/A') {
+      return (
+        <div className="p-3 rounded-lg bg-background/50 border border-secondary/10">
+          <p className="text-xs uppercase tracking-wider font-medium text-foreground/60 mb-2">{label}</p>
+          <div className="text-sm font-mono text-foreground/70">Not Available</div>
+        </div>
+      );
+    }
     
     return (
       <div className="p-3 rounded-lg bg-background/50 border border-secondary/10">
         <p className="text-xs uppercase tracking-wider font-medium text-foreground/60 mb-2">{label}</p>
         <div className="flex items-center">
           <a 
-            href={getExplorerUrl(deployment.chainKey, contract.address)} 
+            href={getExplorerUrl(deployment.chainKey, contract.address, deployment)} 
             target="_blank" 
             rel="noopener noreferrer"
             className="text-sm font-mono text-foreground/80 hover:text-primary break-all pr-2 transition-colors"
@@ -296,7 +304,7 @@ export default function DetailModal({
               disabled={loading}
             >
               <a 
-                href={getExplorerUrl(deployment.chainKey, deployment.endpoint.address)} 
+                href={getExplorerUrl(deployment.chainKey, deployment.endpoint.address, deployment)} 
                 target="_blank" 
                 rel="noopener noreferrer"
               >

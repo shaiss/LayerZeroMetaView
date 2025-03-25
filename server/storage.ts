@@ -196,7 +196,8 @@ export class DatabaseStorage implements IStorage {
     if (conditions.length > 0) {
       // Apply each condition separately
       conditions.forEach(condition => {
-        query = query.where(condition);
+        // Use as any to bypass type checking for the condition
+        query = query.where(condition as any);
       });
     }
     
