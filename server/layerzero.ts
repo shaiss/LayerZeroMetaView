@@ -24,18 +24,29 @@ export async function fetchLayerZeroDeployments(): Promise<ProcessedDeployment[]
     const data = await response.json();
     const processedData: ProcessedDeployment[] = [];
     
-    // Process the response - handle the structure change in the API
+    // Process the response using the base metadata endpoint format
     if (typeof data === 'object' && data !== null) {
-      Object.entries(data).forEach(([chainKeyStage, chainData]) => {
-        if (chainData && typeof chainData === 'object' && 'deployments' in chainData && Array.isArray(chainData.deployments)) {
-          chainData.deployments.forEach((deployment: any) => {
-            if (deployment && deployment.chainKey && deployment.eid && deployment.stage) {
+      // The base metadata endpoint returns an object where keys are chainKeyStage (e.g., "ethereum", "bsc-testnet")
+      // Each value contains network information and deployments
+      Object.entries(data).forEach(([chainKeyStage, chainData]: [string, any]) => {
+        // Extract chain info
+        if (chainData && typeof chainData === 'object') {
+          // Each entry contains deployments and chain details
+          const chainKey = chainKeyStage.split('-')[0]; // Extract base chain name
+          const stage = chainKeyStage.includes('-') ? chainKeyStage.split('-').slice(1).join('-') : 'mainnet'; // Default to mainnet if no stage specified
+          
+          // Get deployments array if it exists, otherwise use empty array
+          const deployments = chainData.deployments || [];
+          
+          // Process each deployment
+          deployments.forEach((deployment: any) => {
+            if (deployment && deployment.eid) {
               // Create a deployment entry with safe property access
               processedData.push({
-                id: `${deployment.chainKey}-${deployment.eid}-${deployment.stage}`,
-                chainKey: deployment.chainKey,
+                id: `${chainKey}-${deployment.eid}-${stage}`,
+                chainKey,
                 eid: deployment.eid,
-                stage: deployment.stage,
+                stage,
                 endpoint: deployment.endpoint || { address: 'N/A' },
                 relayerV2: deployment.relayerV2,
                 ultraLightNodeV2: deployment.ultraLightNodeV2,
@@ -44,7 +55,12 @@ export async function fetchLayerZeroDeployments(): Promise<ProcessedDeployment[]
                 nonceContract: deployment.nonceContract,
                 version: deployment.version || 0,
                 isActive: true, // Assuming all deployments from the API are active
-                rawData: deployment,
+                rawData: {
+                  ...deployment,
+                  chainDetails: chainData.chainDetails || {},
+                  dvns: chainData.dvns || {},
+                  blockExplorers: chainData.blockExplorers || []
+                },
               });
             }
           });
