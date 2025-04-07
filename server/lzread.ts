@@ -5,6 +5,9 @@ import { promisify } from 'util';
 import * as fs from 'fs';
 import * as path from 'path';
 
+// Import the hardhat types
+import type { HardhatNetworkUserConfig, NetworkUserConfig } from 'hardhat/types';
+
 // Promisify exec for async usage
 const execAsync = promisify(exec);
 
@@ -117,34 +120,69 @@ function buildLzReadCliCommand(chainKey: string, query: CrossChainQuery): string
 }
 
 /**
- * Simulates executing a lzRead CLI command.
- * In a real implementation, this would execute the actual CLI command.
- * For our MVP, we simulate this with a direct RPC call.
+ * Executes a lzRead CLI command.
+ * This now uses the actual CLI execution approach
  */
-async function simulateLzReadCliCommand(chainKey: string, query: CrossChainQuery): Promise<ChainData | null> {
+async function executeLzReadCliCommand(chainKey: string, query: CrossChainQuery): Promise<ChainData | null> {
   try {
-    // Generate the CLI command that would be used in a real implementation
+    // Generate the CLI command
     const cliCommand = buildLzReadCliCommand(chainKey, query);
     
-    // Log what would happen in a real implementation
-    console.log(`[lzRead CLI] Would execute: ${cliCommand}`);
+    console.log(`[lzRead CLI] Executing: ${cliCommand}`);
     
-    // Get the chain configuration for the RPC URL
+    // Get the chain configuration
     const chainConfig = chainConfigMap[chainKey];
     if (!chainConfig) {
       console.error(`[lzRead CLI] Chain ${chainKey} not configured`);
       return null;
     }
     
-    // In a real implementation, we would use execAsync to run the CLI command:
-    // const { stdout } = await execAsync(cliCommand);
-    // const result = JSON.parse(stdout);
-    
-    // For our MVP simulation, use the RPC implementation directly
-    console.log(`[lzRead CLI] Simulating query on ${chainKey} for address ${query.address}`);
-    return fetchChainData(chainConfig.rpcUrl, chainKey, chainConfig.eid, query);
+    // In a real production setting, we'd need to:
+    // 1. Ensure we're in the correct directory with the lzRead setup
+    // 2. Source any needed environment variables
+    // 3. Handle proper parsing of the CLI output
+
+    try {
+      // Execute the CLI command
+      const { stdout, stderr } = await execAsync(`npx hardhat lz:read:resolve-command --command "${cliCommand}"`, { 
+        cwd: process.cwd(),
+        env: { ...process.env }
+      });
+      
+      if (stderr) {
+        console.warn(`[lzRead CLI] Command stderr: ${stderr}`);
+      }
+      
+      // Parse the CLI output
+      console.log(`[lzRead CLI] Command output: ${stdout}`);
+      
+      // Try to parse the output as JSON, falling back to a simplified structure
+      let data;
+      try {
+        data = JSON.parse(stdout);
+      } catch (e) {
+        // If the output isn't valid JSON, create a simplified structure
+        data = { rawOutput: stdout };
+      }
+      
+      // Return the chainData with the CLI output
+      return {
+        chainKey,
+        eid: chainConfig.eid,
+        blockNumber: query.blockNumber || 0,
+        timestamp: Date.now(),
+        data
+      };
+    } catch (execError: any) {
+      console.error(`[lzRead CLI] Error executing command: ${execError.message}`);
+      
+      // If CLI execution fails, we can fall back to RPC call for this MVP
+      // In production, you might want to retry, notify, or handle differently
+      console.log(`[lzRead CLI] Falling back to RPC query on ${chainKey} for address ${query.address}`);
+      return fetchChainData(chainConfig.rpcUrl, chainKey, chainConfig.eid, query);
+    }
   } catch (error) {
-    console.error(`[lzRead CLI] Error executing command for ${chainKey}:`, error);
+    console.error(`[lzRead CLI] Error processing command for ${chainKey}:`, error);
     return null;
   }
 }
@@ -177,9 +215,9 @@ export async function performCrossChainQuery(query: CrossChainQuery): Promise<Lz
     // 3. Parse the CLI output to extract results
     // 4. Format and return the results
 
-    // For our MVP, we'll use a simulated CLI command function
+    // Use the actual CLI command execution
     const cliResults: (ChainData | null)[] = await Promise.all(
-      query.chains.map(chainKey => simulateLzReadCliCommand(chainKey, query))
+      query.chains.map(chainKey => executeLzReadCliCommand(chainKey, query))
     );
     
     // Filter out nulls and process results
