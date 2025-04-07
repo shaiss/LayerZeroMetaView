@@ -45,6 +45,7 @@ function CrossChainExplorer() {
   const [address, setAddress] = useState<string>('');
   const [queryType, setQueryType] = useState<'balance' | 'transactions' | 'nonce' | 'storage' | 'code'>('balance');
   const [selectedChains, setSelectedChains] = useState<string[]>([]);
+  const [chainSearchTerm, setChainSearchTerm] = useState<string>('');
   const [activeRequest, setActiveRequest] = useState<string | null>(null);
 
   // Fetch available chains from filter options
@@ -231,31 +232,87 @@ function CrossChainExplorer() {
                 </div>
                 
                 <div className="space-y-2">
-                  <Label>Target Chains</Label>
-                  <div className="flex flex-wrap gap-2 pt-2">
-                    {isLoadingFilters ? (
-                      <div className="flex gap-2">
-                        <Skeleton className="h-8 w-16" />
-                        <Skeleton className="h-8 w-16" />
-                        <Skeleton className="h-8 w-16" />
-                      </div>
-                    ) : (
-                      filterOptions?.map((chain: string) => (
-                        <Badge
-                          key={chain}
-                          variant={selectedChains.includes(chain) ? "default" : "outline"}
-                          className="cursor-pointer"
-                          onClick={() => toggleChain(chain)}
-                        >
-                          {chain}
-                        </Badge>
-                      ))
-                    )}
+                  <div className="flex justify-between items-center">
+                    <Label>Target Chains</Label>
+                    <div className="flex gap-2">
+                      <Button 
+                        type="button" 
+                        variant="outline" 
+                        size="sm" 
+                        onClick={() => filterOptions?.length && setSelectedChains([...filterOptions])}
+                        disabled={isLoadingFilters || !filterOptions?.length}
+                        className="h-7 text-xs"
+                      >
+                        Select All
+                      </Button>
+                      <Button 
+                        type="button" 
+                        variant="outline" 
+                        size="sm" 
+                        onClick={() => setSelectedChains([])}
+                        disabled={isLoadingFilters || selectedChains.length === 0}
+                        className="h-7 text-xs"
+                      >
+                        Clear All
+                      </Button>
+                    </div>
                   </div>
-                  {!isLoadingFilters && filterOptions?.length === 0 && (
-                    <p className="text-sm text-muted-foreground">
-                      No chains available. Please ensure LayerZero deployments are loaded.
-                    </p>
+                  
+                  {isLoadingFilters ? (
+                    <Skeleton className="h-10 w-full" />
+                  ) : (
+                    <div className="border rounded-md">
+                      <div className="p-2 border-b">
+                        <Input 
+                          type="search" 
+                          placeholder="Search chains..."
+                          className="h-8"
+                          value={chainSearchTerm}
+                          onChange={(e) => setChainSearchTerm(e.target.value)}
+                        />
+                      </div>
+                      <div className="p-1 max-h-48 overflow-y-auto">
+                        {filterOptions && filterOptions.length > 0 ? (
+                          filterOptions
+                            .filter(chain => chain.toLowerCase().includes(chainSearchTerm.toLowerCase()))
+                            .map((chain: string) => (
+                              <div 
+                                key={chain}
+                                className="flex items-center p-1.5 hover:bg-muted rounded-sm cursor-pointer"
+                                onClick={() => toggleChain(chain)}
+                              >
+                                <input 
+                                  type="checkbox"
+                                  className="mr-2"
+                                  checked={selectedChains.includes(chain)}
+                                  onChange={() => {}} // Controlled by parent div click
+                                  onClick={(e) => e.stopPropagation()}
+                                />
+                                <span>{chain}</span>
+                              </div>
+                            ))
+                        ) : (
+                          <p className="text-sm text-muted-foreground p-2">
+                            No chains available. Please ensure LayerZero deployments are loaded.
+                          </p>
+                        )}
+                        
+                        {filterOptions && filterOptions.length > 0 && 
+                         filterOptions.filter(chain => 
+                           chain.toLowerCase().includes(chainSearchTerm.toLowerCase())
+                         ).length === 0 && (
+                          <p className="text-sm text-muted-foreground p-2">
+                            No chains match your search term.
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                  )}
+                  
+                  {selectedChains.length > 0 && (
+                    <div className="text-sm">
+                      <span className="font-medium">{selectedChains.length}</span> chains selected
+                    </div>
                   )}
                 </div>
                 
@@ -509,12 +566,12 @@ function CrossChainExplorer() {
                             Wallet Assets
                           </h3>
                           <Badge variant="outline">
-                            {requestDetails.walletScan?.assets.length} Assets Found
+                            {requestDetails?.walletScan?.assets?.length || 0} Assets Found
                           </Badge>
                         </div>
                         
                         <div className="grid gap-4 md:grid-cols-2">
-                          {requestDetails.walletScan?.assets.map((asset, index) => (
+                          {requestDetails?.walletScan?.assets?.map((asset, index) => (
                             <Card key={index}>
                               <CardHeader className="py-3">
                                 <div className="flex justify-between items-center">
