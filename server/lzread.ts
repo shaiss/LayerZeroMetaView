@@ -1,52 +1,65 @@
 import { CrossChainQuery, CrossChainResult, ChainData, LzReadRequest } from '@shared/types';
 import { v4 as uuidv4 } from 'uuid';
+import { exec } from 'child_process';
+import { promisify } from 'util';
+import * as fs from 'fs';
+import * as path from 'path';
+
+// Promisify exec for async usage
+const execAsync = promisify(exec);
 
 // In modern Node.js, fetch is available globally
 const fetchApi = fetch;
 
-// For a production application, we would integrate directly 
-// with the lzRead contracts or use an official SDK
-// This service simulates such integration with RPC calls using ethers.js or similar library
+/**
+ * In a production application, we would use the LayerZero lzRead CLI directly
+ * 
+ * The CLI approach would involve:
+ * 1. Using the lzRead CLI tool to connect to source chains and execute cross-chain reads
+ * 2. Properly parsing and processing the results from multiple chains
+ * 
+ * For our MVP, we'll simulate the CLI output by using direct RPC calls
+ * while structuring our code in a way that could be replaced with actual CLI calls
+ */
 
 // Map of chainKey to necessary data for interacting with lzRead on that chain
-// In a production app, this would be dynamically loaded from API
 interface ChainConfig {
   rpcUrl: string;
-  lzEndpointAddress?: string; // The LayerZero endpoint address on this chain
-  eid: string; // LayerZero Endpoint ID
+  chainId: number; // Ethereum chain ID
+  eid: string;    // LayerZero Endpoint ID
 }
 
-// Map chainKeys to their configurations - this would normally come from an API or environment variables
+// Map chainKeys to their configurations (would be stored in a config file for the CLI)
 const chainConfigMap: Record<string, ChainConfig> = {
   ethereum: { 
     rpcUrl: 'https://eth-mainnet.public.blastapi.io',
-    eid: '30001', // Example EID - would be actual value from LayerZero
-    lzEndpointAddress: '0x66A71Dcef29A0fFBDBE3c6a460a3B5BC225Cd675' // Example
+    chainId: 1,
+    eid: '30001', 
   },
   arbitrum: { 
     rpcUrl: 'https://arb1.arbitrum.io/rpc',
-    eid: '30110', // Example
-    lzEndpointAddress: '0x3c2269811836af69497E5F486A85D7316753cf62' // Example
+    chainId: 42161,
+    eid: '30110',
   },
   optimism: { 
     rpcUrl: 'https://mainnet.optimism.io',
-    eid: '30111', // Example
-    lzEndpointAddress: '0x3c2269811836af69497E5F486A85D7316753cf62' // Example
+    chainId: 10,
+    eid: '30111',
   },
   polygon: { 
     rpcUrl: 'https://polygon-rpc.com',
-    eid: '30109', // Example
-    lzEndpointAddress: '0x3c2269811836af69497E5F486A85D7316753cf62' // Example
+    chainId: 137,
+    eid: '30109',
   },
   avalanche: { 
     rpcUrl: 'https://api.avax.network/ext/bc/C/rpc',
-    eid: '30106', // Example
-    lzEndpointAddress: '0x3c2269811836af69497E5F486A85D7316753cf62' // Example
+    chainId: 43114,
+    eid: '30106',
   },
   bsc: { 
     rpcUrl: 'https://bsc-dataseed.binance.org',
-    eid: '30102', // Example
-    lzEndpointAddress: '0x3c2269811836af69497E5F486A85D7316753cf62' // Example
+    chainId: 56,
+    eid: '30102',
   },
 };
 
@@ -58,6 +71,87 @@ const requestHistory: LzReadRequest[] = [];
  * Simulates a lzRead request to fetch data across multiple chains using LayerZero's lzRead protocol
  * This is a simplified simulation for demonstration purposes
  * In a production environment, this would use the actual lzRead SDK or contracts
+ */
+/**
+ * Generate the CLI command that would be used with the real lzRead tool
+ * This follows the pattern shown in the lzRead CLI documentation
+ */
+function buildLzReadCliCommand(chainKey: string, query: CrossChainQuery): string {
+  const chainConfig = chainConfigMap[chainKey];
+  if (!chainConfig) {
+    throw new Error(`Chain ${chainKey} not configured for lzRead`);
+  }
+  
+  // Define the method type based on the query type
+  let method = '';
+  let additionalArgs = '';
+  
+  switch (query.queryType) {
+    case 'balance':
+      method = 'balanceOf';
+      break;
+    case 'nonce':
+      method = 'nonce';
+      break;
+    case 'code':
+      method = 'code';
+      break;
+    case 'transactions':
+      method = 'txs';
+      break;
+    case 'storage':
+      method = 'storage';
+      // For storage, we'd specify a slot number
+      additionalArgs = ' --slot=0';
+      break;
+    default:
+      method = query.queryType;
+  }
+  
+  // Build a command similar to the lzRead CLI tool format
+  // Based on documentation at https://docs.layerzero.network/v2/developers/evm/lzread/read-cli
+  const blockNumberArg = query.blockNumber ? ` --block=${query.blockNumber}` : '';
+  
+  // This is the command that would be executed in a real implementation
+  return `lzread ${method} --chain=${chainConfig.chainId} --endpoint=${chainConfig.eid} --address=${query.address}${blockNumberArg}${additionalArgs}`;
+}
+
+/**
+ * Simulates executing a lzRead CLI command.
+ * In a real implementation, this would execute the actual CLI command.
+ * For our MVP, we simulate this with a direct RPC call.
+ */
+async function simulateLzReadCliCommand(chainKey: string, query: CrossChainQuery): Promise<ChainData | null> {
+  try {
+    // Generate the CLI command that would be used in a real implementation
+    const cliCommand = buildLzReadCliCommand(chainKey, query);
+    
+    // Log what would happen in a real implementation
+    console.log(`[lzRead CLI] Would execute: ${cliCommand}`);
+    
+    // Get the chain configuration for the RPC URL
+    const chainConfig = chainConfigMap[chainKey];
+    if (!chainConfig) {
+      console.error(`[lzRead CLI] Chain ${chainKey} not configured`);
+      return null;
+    }
+    
+    // In a real implementation, we would use execAsync to run the CLI command:
+    // const { stdout } = await execAsync(cliCommand);
+    // const result = JSON.parse(stdout);
+    
+    // For our MVP simulation, use the RPC implementation directly
+    console.log(`[lzRead CLI] Simulating query on ${chainKey} for address ${query.address}`);
+    return fetchChainData(chainConfig.rpcUrl, chainKey, chainConfig.eid, query);
+  } catch (error) {
+    console.error(`[lzRead CLI] Error executing command for ${chainKey}:`, error);
+    return null;
+  }
+}
+
+/**
+ * Perform a cross-chain query using the lzRead protocol.
+ * This function models what we'd do if integrating with the lzRead CLI tool
  */
 export async function performCrossChainQuery(query: CrossChainQuery): Promise<LzReadRequest> {
   console.log(`[lzRead] Starting cross-chain query for ${query.address} across ${query.chains.length} chains`);
@@ -77,44 +171,26 @@ export async function performCrossChainQuery(query: CrossChainQuery): Promise<Lz
   requestHistory.push(request);
   
   try {
-    // In the real lzRead implementation, we would:
-    // 1. Encode the relevant function call as calldata using abi.encodeWithSelector
-    // 2. Create an EVMCallRequestV1 struct for each target chain
-    // 3. Call lzRead's quoteRead function to get gas costs
-    // 4. Submit the request to lzRead via OAppReader contract
-    // 5. Wait for the response via an async callback mechanism
-    
-    // For our MVP simulation, we'll directly fetch data from each chain's RPC
-    const results: ChainData[] = await Promise.all(
-      query.chains.map(async (chainKey) => {
-        const chainConfig = chainConfigMap[chainKey];
-        if (!chainConfig) {
-          return {
-            chainKey,
-            eid: '0',
-            blockNumber: 0,
-            timestamp: Date.now(),
-            data: { error: 'Chain not configured for lzRead' }
-          };
-        }
-        
-        // In a real implementation, here we would:
-        // - Generate the appropriate calldata for the query type
-        // - Create the EVMCallRequestV1 struct as shown in the docs
-        // - Submit via the lzRead protocol
+    // In a real implementation with lzRead CLI, we would:
+    // 1. Create appropriate CLI command for each target chain
+    // 2. Execute the CLI commands (likely in parallel)
+    // 3. Parse the CLI output to extract results
+    // 4. Format and return the results
 
-        // For the MVP simulation, we'll directly make the RPC calls
-        return fetchChainData(chainConfig.rpcUrl, chainKey, chainConfig.eid, query);
-      })
+    // For our MVP, we'll use a simulated CLI command function
+    const cliResults: (ChainData | null)[] = await Promise.all(
+      query.chains.map(chainKey => simulateLzReadCliCommand(chainKey, query))
     );
     
-    // Update request with results - in a real implementation, this would happen
-    // asynchronously once all the lzRead responses have been processed
+    // Filter out nulls and process results
+    const validResults: ChainData[] = cliResults.filter(r => r !== null) as ChainData[];
+    
+    // Update request with results
     request.status = 'completed';
     request.result = {
       address: query.address,
       queryType: query.queryType,
-      results: results.filter(r => !r.data.error), // Filter out errors
+      results: validResults,
       timestamp: Date.now()
     };
     
