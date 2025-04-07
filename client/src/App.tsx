@@ -16,15 +16,11 @@ function Navigation() {
       <div className="container flex h-16 items-center">
         <div className="mr-8 font-bold text-lg">LayerZero Explorer</div>
         <nav className="flex gap-6">
-          <Link href="/">
-            <a className={`text-sm ${location === '/' ? 'font-medium' : 'text-muted-foreground'}`}>
-              Deployments
-            </a>
+          <Link href="/" className={`text-sm ${location === '/' ? 'font-medium' : 'text-muted-foreground'}`}>
+            Deployments
           </Link>
-          <Link href="/cross-chain-explorer">
-            <a className={`text-sm ${location === '/cross-chain-explorer' ? 'font-medium' : 'text-muted-foreground'}`}>
-              Cross-Chain Explorer
-            </a>
+          <Link href="/cross-chain-explorer" className={`text-sm ${location === '/cross-chain-explorer' ? 'font-medium' : 'text-muted-foreground'}`}>
+            Cross-Chain Explorer
           </Link>
         </nav>
       </div>

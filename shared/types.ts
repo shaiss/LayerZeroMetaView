@@ -94,6 +94,28 @@ export interface CrossChainResult {
   timestamp: number;
 }
 
+export interface AssetData {
+  chain: string;
+  eid: string;
+  assetType: 'native' | 'erc20' | 'erc721' | 'other';
+  symbol?: string;
+  name?: string;
+  balance: string;
+  balanceFormatted?: string;
+  decimals?: number;
+  contractAddress?: string;
+  blockNumber: number;
+  lastUpdated: number;
+}
+
+export interface WalletScanResult {
+  address: string;
+  totalChains: number;
+  chainsWithAssets: number;
+  assets: AssetData[];
+  timestamp: number;
+}
+
 export interface LzReadRequest {
   id: string;
   sourceChain: string;
@@ -102,4 +124,5 @@ export interface LzReadRequest {
   status: 'pending' | 'completed' | 'failed';
   timestamp: number;
   result?: CrossChainResult;
+  walletScan?: WalletScanResult;
 }

@@ -2,7 +2,7 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { fetchLayerZeroDeployments, fetchDeploymentById } from "./layerzero";
-import { performCrossChainQuery, getRecentRequests, getRequestById } from "./lzread";
+import { performCrossChainQuery, getRecentRequests, getRequestById, performWalletVacuum } from "./lzread";
 import { ProcessedDeployment, CrossChainQuery } from "@shared/types";
 
 export async function registerRoutes(app: Express): Promise<Server> {
@@ -244,6 +244,31 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.error(`Error fetching request ${req.params.id}:`, error);
       res.status(500).json({ 
         message: "Failed to fetch request details",
+        error: error instanceof Error ? error.message : String(error)
+      });
+    }
+  });
+
+  // API endpoint to perform a wallet vacuum (scan assets across chains)
+  app.post("/api/lzread/wallet-vacuum", async (req, res) => {
+    try {
+      const { address, chains } = req.body;
+      
+      // Validate required fields
+      if (!address) {
+        return res.status(400).json({ message: "Wallet address is required" });
+      }
+      if (!chains || !Array.isArray(chains) || chains.length === 0) {
+        return res.status(400).json({ message: "At least one chain must be specified" });
+      }
+      
+      console.log(`Starting wallet vacuum for ${address} across ${chains.length} chains`);
+      const result = await performWalletVacuum(address, chains);
+      res.json(result);
+    } catch (error) {
+      console.error("Error performing wallet vacuum:", error);
+      res.status(500).json({ 
+        message: "Failed to perform wallet vacuum",
         error: error instanceof Error ? error.message : String(error)
       });
     }

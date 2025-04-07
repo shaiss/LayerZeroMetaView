@@ -108,3 +108,14 @@ export async function fetchLzReadRequestById(id: string): Promise<LzReadRequest>
   
   return response.json();
 }
+
+// Perform a wallet vacuum to scan for assets across chains
+export async function performWalletVacuum(address: string, chains: string[]): Promise<LzReadRequest> {
+  const response = await apiRequest("POST", "/api/lzread/wallet-vacuum", { address, chains });
+  
+  if (!response.ok) {
+    throw new Error(`Failed to perform wallet vacuum: ${response.statusText}`);
+  }
+  
+  return response.json();
+}

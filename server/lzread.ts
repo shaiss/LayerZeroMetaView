@@ -1,4 +1,4 @@
-import { CrossChainQuery, CrossChainResult, ChainData, LzReadRequest } from '@shared/types';
+import { CrossChainQuery, CrossChainResult, ChainData, LzReadRequest, AssetData, WalletScanResult } from '@shared/types';
 import { v4 as uuidv4 } from 'uuid';
 import { exec } from 'child_process';
 import { promisify } from 'util';
@@ -472,4 +472,172 @@ export function getRecentRequests(limit: number = 10): LzReadRequest[] {
  */
 export function getRequestById(id: string): LzReadRequest | undefined {
   return requestHistory.find(req => req.id === id);
+}
+
+/**
+ * Performs a wallet vacuum operation that scans for assets across multiple chains
+ * This is an advanced feature that demonstrates the power of lzRead for cross-chain data aggregation
+ */
+export async function performWalletVacuum(address: string, chains: string[]): Promise<LzReadRequest> {
+  console.log(`[lzRead] Starting wallet vacuum for ${address} across ${chains.length} chains`);
+  
+  // Create a request record for the wallet scan
+  const requestId = uuidv4();
+  const request: LzReadRequest = {
+    id: requestId,
+    sourceChain: 'explorer',
+    targetChains: chains,
+    requestType: 'wallet_vacuum', 
+    status: 'pending',
+    timestamp: Date.now()
+  };
+  
+  // Add to history
+  requestHistory.push(request);
+  
+  try {
+    // Execute balance checks on each chain
+    const assetPromises = chains.map(async (chainKey) => {
+      try {
+        const chainConfig = chainConfigMap[chainKey];
+        if (!chainConfig) {
+          console.log(`[Wallet Vacuum] Chain ${chainKey} not configured, skipping`);
+          return null;
+        }
+        
+        // Get native token balance
+        const nativeBalanceQuery: CrossChainQuery = {
+          address,
+          queryType: 'balance',
+          chains: [chainKey]
+        };
+        
+        const nativeData = await fetchChainData(
+          chainConfig.rpcUrl, 
+          chainKey, 
+          chainConfig.eid, 
+          nativeBalanceQuery
+        );
+        
+        // Basic asset data for the native token
+        const nativeAsset: AssetData = {
+          chain: chainKey,
+          eid: chainConfig.eid,
+          assetType: 'native',
+          symbol: getChainNativeSymbol(chainKey),
+          name: getChainNativeName(chainKey),
+          balance: nativeData.data || '0x0',
+          balanceFormatted: formatBalance(nativeData.data || '0x0', 18),
+          decimals: 18,
+          blockNumber: nativeData.blockNumber,
+          lastUpdated: nativeData.timestamp
+        };
+        
+        // In a real implementation, we would also:
+        // 1. Scan for ERC20 tokens
+        // 2. Scan for ERC721 tokens (NFTs)
+        // 3. Check for any other special assets
+        
+        // For now, we'll just return the native asset
+        return nativeAsset;
+      } catch (chainError) {
+        console.error(`[Wallet Vacuum] Error scanning ${chainKey}:`, chainError);
+        return null;
+      }
+    });
+    
+    // Wait for all asset checks to complete
+    const assets = (await Promise.all(assetPromises)).filter(a => a !== null) as AssetData[];
+    
+    // Calculate statistics
+    const chainsWithAssets = new Set(assets.filter(a => a.balance !== '0x0' && a.balance !== '0').map(a => a.chain)).size;
+    
+    // Update request with wallet scan results
+    const walletScan: WalletScanResult = {
+      address,
+      totalChains: chains.length,
+      chainsWithAssets,
+      assets,
+      timestamp: Date.now()
+    };
+    
+    request.status = 'completed';
+    request.walletScan = walletScan;
+    
+    console.log(`[Wallet Vacuum] Completed scan for ${address}: found assets on ${chainsWithAssets}/${chains.length} chains`);
+    return request;
+  } catch (error) {
+    console.error(`[Wallet Vacuum] Error performing wallet vacuum:`, error);
+    request.status = 'failed';
+    return request;
+  }
+}
+
+/**
+ * Helper function to get native token symbol for a chain
+ */
+function getChainNativeSymbol(chainKey: string): string {
+  const symbolMap: Record<string, string> = {
+    ethereum: 'ETH',
+    arbitrum: 'ETH',
+    optimism: 'ETH',
+    polygon: 'MATIC',
+    avalanche: 'AVAX',
+    bsc: 'BNB',
+    canto: 'CANTO',
+    fantom: 'FTM',
+    base: 'ETH',
+    zksync: 'ETH',
+    linea: 'ETH',
+    gnosis: 'xDAI',
+    moonbeam: 'GLMR'
+  };
+  
+  return symbolMap[chainKey] || 'NATIVE';
+}
+
+/**
+ * Helper function to get native token name for a chain
+ */
+function getChainNativeName(chainKey: string): string {
+  const nameMap: Record<string, string> = {
+    ethereum: 'Ethereum',
+    arbitrum: 'Ethereum',
+    optimism: 'Ethereum',
+    polygon: 'Matic',
+    avalanche: 'Avalanche',
+    bsc: 'Binance Coin',
+    canto: 'Canto',
+    fantom: 'Fantom',
+    base: 'Ethereum',
+    zksync: 'Ethereum',
+    linea: 'Ethereum',
+    gnosis: 'xDAI',
+    moonbeam: 'Glimmer'
+  };
+  
+  return nameMap[chainKey] || 'Native Token';
+}
+
+/**
+ * Helper function to format balance with decimals
+ */
+function formatBalance(hexBalance: string, decimals: number): string {
+  if (!hexBalance || hexBalance === '0x0') return '0';
+  
+  try {
+    // Convert hex to decimal
+    const balance = parseInt(hexBalance, 16) / Math.pow(10, decimals);
+    
+    // Format based on size
+    if (balance < 0.0001 && balance > 0) {
+      return '< 0.0001';
+    }
+    
+    return balance.toLocaleString(undefined, {
+      maximumFractionDigits: 4
+    });
+  } catch (e) {
+    return '0';
+  }
 }

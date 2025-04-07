@@ -4,7 +4,8 @@ import {
   performCrossChainQuery, 
   fetchRecentLzReadRequests, 
   fetchLzReadRequestById,
-  fetchFilterOptions 
+  fetchFilterOptions,
+  performWalletVacuum
 } from '@/lib/api';
 import { CrossChainQuery, LzReadRequest, FilterOptions } from '@shared/types';
 import { Button } from '@/components/ui/button';
@@ -69,6 +70,7 @@ function CrossChainExplorer() {
   });
   
   // Mutation to perform a cross-chain query
+  // Mutation for standard cross-chain queries
   const mutation = useMutation({
     mutationFn: performCrossChainQuery,
     onSuccess: (data) => {
@@ -87,6 +89,31 @@ function CrossChainExplorer() {
       toast({
         title: 'Query failed',
         description: error instanceof Error ? error.message : 'Failed to submit cross-chain query',
+        variant: 'destructive'
+      });
+    }
+  });
+  
+  // Mutation for wallet vacuum (asset scanning across chains)
+  const walletVacuumMutation = useMutation({
+    mutationFn: (params: { address: string, chains: string[] }) => 
+      performWalletVacuum(params.address, params.chains),
+    onSuccess: (data) => {
+      // Set the new request as active
+      setActiveRequest(data.id);
+      
+      // Invalidate the recent requests query to refresh the list
+      queryClient.invalidateQueries({ queryKey: ['/api/lzread/recent'] });
+      
+      toast({
+        title: 'Wallet vacuum started',
+        description: `Scanning for assets across ${data.targetChains.length} chains for ${truncateAddress(data.walletScan?.address || '')}`,
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: 'Wallet scan failed',
+        description: error instanceof Error ? error.message : 'Failed to scan wallet across chains',
         variant: 'destructive'
       });
     }
@@ -132,6 +159,29 @@ function CrossChainExplorer() {
   
   const handleRequestClick = (request: LzReadRequest) => {
     setActiveRequest(request.id);
+  };
+  
+  // Handler for the wallet vacuum feature
+  const handleWalletVacuum = () => {
+    if (!address) {
+      toast({
+        title: 'Missing address',
+        description: 'Please enter a valid wallet address to scan',
+        variant: 'destructive'
+      });
+      return;
+    }
+    
+    if (selectedChains.length === 0) {
+      toast({
+        title: 'No chains selected',
+        description: 'Please select at least one chain to scan for assets',
+        variant: 'destructive'
+      });
+      return;
+    }
+    
+    walletVacuumMutation.mutate({ address, chains: selectedChains });
   };
   
   return (
@@ -209,13 +259,25 @@ function CrossChainExplorer() {
                   )}
                 </div>
                 
-                <Button 
-                  type="submit" 
-                  className="w-full"
-                  disabled={mutation.isPending || !address || selectedChains.length === 0}
-                >
-                  {mutation.isPending ? 'Submitting...' : 'Query Across Chains'}
-                </Button>
+                <div className="grid grid-cols-2 gap-2">
+                  <Button 
+                    type="submit" 
+                    className="w-full"
+                    disabled={mutation.isPending || walletVacuumMutation.isPending || !address || selectedChains.length === 0}
+                  >
+                    {mutation.isPending ? 'Submitting...' : 'Query Across Chains'}
+                  </Button>
+                  
+                  <Button 
+                    type="button"
+                    variant="outline" 
+                    className="w-full"
+                    onClick={handleWalletVacuum}
+                    disabled={walletVacuumMutation.isPending || mutation.isPending || !address || selectedChains.length === 0}
+                  >
+                    {walletVacuumMutation.isPending ? 'Scanning...' : 'Wallet Vacuum'}
+                  </Button>
+                </div>
               </form>
             </CardContent>
           </Card>
@@ -324,11 +386,21 @@ function CrossChainExplorer() {
                 <Tabs defaultValue="data">
                   <TabsList>
                     <TabsTrigger value="data">Data</TabsTrigger>
+                    {requestDetails?.walletScan && <TabsTrigger value="assets">Assets</TabsTrigger>}
                     <TabsTrigger value="raw">Raw Response</TabsTrigger>
                   </TabsList>
                   
                   <TabsContent value="data" className="space-y-4">
-                    {requestDetails?.result?.results.map((chainData, index) => (
+                    {requestDetails?.requestType === 'wallet_vacuum' ? (
+                      <Alert>
+                        <AlertTitle>Wallet Vacuum Results</AlertTitle>
+                        <AlertDescription>
+                          Found assets on {requestDetails.walletScan?.chainsWithAssets || 0} 
+                          of {requestDetails.walletScan?.totalChains || 0} chains. 
+                          Switch to the Assets tab to view details.
+                        </AlertDescription>
+                      </Alert>
+                    ) : requestDetails?.result?.results.map((chainData, index) => (
                       <Card key={index}>
                         <CardHeader className="py-3">
                           <div className="flex justify-between items-center">
@@ -418,6 +490,68 @@ function CrossChainExplorer() {
                           No data was returned from any chain. This may be because the address doesn't exist on the selected chains or there was an error with the RPC endpoints.
                         </AlertDescription>
                       </Alert>
+                    )}
+                  </TabsContent>
+                  
+                  {/* Assets tab for wallet vacuum */}
+                  <TabsContent value="assets" className="space-y-4">
+                    {requestDetails?.walletScan?.assets.length === 0 ? (
+                      <Alert>
+                        <AlertTitle>No assets found</AlertTitle>
+                        <AlertDescription>
+                          No assets were found for this wallet across the selected chains.
+                        </AlertDescription>
+                      </Alert>
+                    ) : (
+                      <div>
+                        <div className="flex justify-between items-center mb-4">
+                          <h3 className="text-lg font-medium">
+                            Wallet Assets
+                          </h3>
+                          <Badge variant="outline">
+                            {requestDetails.walletScan?.assets.length} Assets Found
+                          </Badge>
+                        </div>
+                        
+                        <div className="grid gap-4 md:grid-cols-2">
+                          {requestDetails.walletScan?.assets.map((asset, index) => (
+                            <Card key={index}>
+                              <CardHeader className="py-3">
+                                <div className="flex justify-between items-center">
+                                  <CardTitle className="text-base">
+                                    {asset.chain}
+                                    <span className="text-xs text-muted-foreground ml-2">
+                                      (EID: {asset.eid})
+                                    </span>
+                                  </CardTitle>
+                                  <Badge 
+                                    variant={parseFloat(asset.balanceFormatted || '0') > 0 ? "default" : "outline"}
+                                  >
+                                    {asset.assetType}
+                                  </Badge>
+                                </div>
+                              </CardHeader>
+                              <CardContent className="py-3">
+                                <div className="flex justify-between items-center">
+                                  <div>
+                                    <p className="text-sm font-medium">{asset.name}</p>
+                                    <p className="text-xs text-muted-foreground">{asset.symbol}</p>
+                                  </div>
+                                  <p className="text-lg font-mono">
+                                    {asset.balanceFormatted}
+                                  </p>
+                                </div>
+                                
+                                {asset.contractAddress && (
+                                  <div className="mt-2 pt-2 border-t text-xs text-muted-foreground">
+                                    Contract: {truncateAddress(asset.contractAddress)}
+                                  </div>
+                                )}
+                              </CardContent>
+                            </Card>
+                          ))}
+                        </div>
+                      </div>
                     )}
                   </TabsContent>
                   
