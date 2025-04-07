@@ -1,0 +1,54 @@
+Please run: npm install --save-dev ts-node
+For more info go to https://hardhat.org/HH13 or run Hardhat with --show-stack-traces
+
+[lzRead CLI] Falling back to RPC query on bsc for address 0x5735a40D8a72af257DF016f8F40e492dc8Bb288A
+[lzRead] Fetching balance data for 0x5735a40D8a72af257DF016f8F40e492dc8Bb288A on bsc
+[lzRead] Completed query 938c9963-c9b0-4306-9db5-61459c4e90cc with 1 results
+2:30:30 AM [express] POST /api/lzread/query 200 in 809ms :: {"id":"938c9963-c9b0-4306-9db5-61459c4e9…
+2:30:30 AM [express] GET /api/lzread/recent 200 in 1ms :: [{"id":"938c9963-c9b0-4306-9db5-61459c4e90…
+2:30:30 AM [express] GET /api/lzread/request/938c9963-c9b0-4306-9db5-61459c4e90cc 200 in 1ms :: {"id…
+2:30:32 AM [express] GET /api/lzread/request/938c9963-c9b0-4306-9db5-61459c4e90cc 304 in 1ms :: {"id…
+2:30:34 AM [express] GET /api/lzread/request/938c9963-c9b0-4306-9db5-61459c4e90cc 304 in 1ms :: {"id…
+2:30:35 AM [express] GET /api/lzread/recent 304 in 0ms :: [{"id":"938c9963-c9b0-4306-9db5-61459c4e90…
+2:30:36 AM [express] GET /api/lzread/request/938c9963-c9b0-4306-9db5-61459c4e90cc 304 in 0ms :: {"id…
+2:30:38 AM [express] GET /api/lzread/request/938c9963-c9b0-4306-9db5-61459c4e90cc 304 in 1ms :: {"id…
+2:30:40 AM [express] GET /api/lzread/recent 304 in 1ms :: [{"id":"938c9963-c9b0-4306-9db5-61459c4e90…
+2:30:40 AM [express] GET /api/lzread/request/938c9963-c9b0-4306-9db5-61459c4e90cc 304 in 1ms :: {"id…
+[lzRead] Starting cross-chain query for 0x5735a40D8a72af257DF016f8F40e492dc8Bb288A across 2 chains
+[lzRead CLI] Error processing command for canto: Error: Chain canto not configured for lzRead
+    at buildLzReadCliCommand (/home/runner/workspace/server/lzread.ts:85:11)
+    at executeLzReadCliCommand (/home/runner/workspace/server/lzread.ts:129:24)
+    at <anonymous> (/home/runner/workspace/server/lzread.ts:220:36)
+    at Array.map (<anonymous>)
+    at performCrossChainQuery (/home/runner/workspace/server/lzread.ts:220:20)
+    at <anonymous> (/home/runner/workspace/server/routes.ts:206:28)
+    at Layer.handle [as handle_request] (/home/runner/workspace/node_modules/express/lib/router/layer.js:95:5)
+    at next (/home/runner/workspace/node_modules/express/lib/router/route.js:149:13)
+    at Route.dispatch (/home/runner/workspace/node_modules/express/lib/router/route.js:119:3)
+    at Layer.handle [as handle_request] (/home/runner/workspace/node_modules/express/lib/router/layer.js:95:5)
+    at /home/runner/workspace/node_modules/express/lib/router/index.js:284:15
+    at Function.process_params (/home/runner/workspace/node_modules/express/lib/router/index.js:346:12)
+    at next (/home/runner/workspace/node_modules/express/lib/router/index.js:280:10)
+    at <anonymous> (/home/runner/workspace/server/index.ts:39:3)
+    at Layer.handle [as handle_request] (/home/runner/workspace/node_modules/express/lib/router/layer.js:95:5)
+    at trim_prefix (/home/runner/workspace/node_modules/express/lib/router/index.js:328:13)
+    at /home/runner/workspace/node_modules/express/lib/router/index.js:286:9
+    at Function.process_params (/home/runner/workspace/node_modules/express/lib/router/index.js:346:12)
+    at next (/home/runner/workspace/node_modules/express/lib/router/index.js:280:10)
+    at urlencodedParser (/home/runner/workspace/node_modules/body-parser/lib/types/urlencoded.js:85:7)
+    at Layer.handle [as handle_request] (/home/runner/workspace/node_modules/express/lib/router/layer.js:95:5)
+    at trim_prefix (/home/runner/workspace/node_modules/express/lib/router/index.js:328:13)
+    at /home/runner/workspace/node_modules/express/lib/router/index.js:286:9
+    at Function.process_params (/home/runner/workspace/node_modules/express/lib/router/index.js:346:12)
+    at next (/home/runner/workspace/node_modules/express/lib/router/index.js:280:10)
+    at /home/runner/workspace/node_modules/body-parser/lib/read.js:137:5
+    at AsyncResource.runInAsyncScope (node:async_hooks:206:9)
+    at invokeCallback (/home/runner/workspace/node_modules/raw-body/index.js:238:16)
+    at done (/home/runner/workspace/node_modules/raw-body/index.js:227:7)
+    at IncomingMessage.onEnd (/home/runner/workspace/node_modules/raw-body/index.js:287:7)
+    at IncomingMessage.emit (node:events:518:28)
+    at endReadableNT (node:internal/streams/readable:1698:12)
+    at process.processTicksAndRejections (node:internal/process/task_queues:82:21)
+[lzRead CLI] Executing: lzread txs --chain=56 --endpoint=30102 --address=0x5735a40D8a72af257DF016f8F40e492dc8Bb288A
+[lzRead CLI] Error executing command: Command failed: npx hardhat lz:read:resolve-command --command "lzread txs --chain=56 --endpoint=30102 --address=0x5735a40D8a72af257DF016f8F40e492dc8Bb288A"
+Error HH13: Your Hardhat project uses typescript, but ts-node is not installed.
