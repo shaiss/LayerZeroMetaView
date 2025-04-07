@@ -2,7 +2,8 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { fetchLayerZeroDeployments, fetchDeploymentById } from "./layerzero";
-import { ProcessedDeployment } from "@shared/types";
+import { performCrossChainQuery, getRecentRequests, getRequestById } from "./lzread";
+import { ProcessedDeployment, CrossChainQuery } from "@shared/types";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // API endpoint to get all deployments
@@ -181,6 +182,68 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.error("Error generating network data:", error);
       res.status(500).json({ 
         message: "Failed to generate network data",
+        error: error instanceof Error ? error.message : String(error)
+      });
+    }
+  });
+
+  // API endpoint to perform a cross-chain query
+  app.post("/api/lzread/query", async (req, res) => {
+    try {
+      const query: CrossChainQuery = req.body;
+      
+      // Validate required fields
+      if (!query.address) {
+        return res.status(400).json({ message: "Address is required" });
+      }
+      if (!query.queryType) {
+        return res.status(400).json({ message: "Query type is required" });
+      }
+      if (!query.chains || !Array.isArray(query.chains) || query.chains.length === 0) {
+        return res.status(400).json({ message: "At least one chain must be specified" });
+      }
+      
+      const result = await performCrossChainQuery(query);
+      res.json(result);
+    } catch (error) {
+      console.error("Error performing cross-chain query:", error);
+      res.status(500).json({ 
+        message: "Failed to perform cross-chain query",
+        error: error instanceof Error ? error.message : String(error)
+      });
+    }
+  });
+
+  // API endpoint to get recent lzRead requests
+  app.get("/api/lzread/recent", (req, res) => {
+    try {
+      const limit = parseInt(req.query.limit as string) || 10;
+      const recentRequests = getRecentRequests(limit);
+      res.json(recentRequests);
+    } catch (error) {
+      console.error("Error fetching recent requests:", error);
+      res.status(500).json({ 
+        message: "Failed to fetch recent requests",
+        error: error instanceof Error ? error.message : String(error)
+      });
+    }
+  });
+
+  // API endpoint to get a specific lzRead request by ID
+  app.get("/api/lzread/request/:id", (req, res) => {
+    try {
+      const requestId = req.params.id;
+      const request = getRequestById(requestId);
+      
+      if (!request) {
+        return res.status(404).json({ message: "Request not found" });
+      }
+      
+      res.json(request);
+    } catch (error) {
+      console.error(`Error fetching request ${req.params.id}:`, error);
+      res.status(500).json({ 
+        message: "Failed to fetch request details",
         error: error instanceof Error ? error.message : String(error)
       });
     }

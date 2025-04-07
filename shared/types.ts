@@ -70,3 +70,36 @@ export interface FilterOptions {
   stages: string[];
   versions: number[];
 }
+
+// lzRead cross-chain data access types
+export interface ChainData {
+  chainKey: string;
+  eid: string;
+  blockNumber: number;
+  timestamp: number;
+  data: any;
+}
+
+export interface CrossChainQuery {
+  address: string;
+  queryType: 'balance' | 'transactions' | 'nonce' | 'storage' | 'code';
+  chains: string[]; // Chain keys to query
+  blockNumber?: number; // Optional specific block number, defaults to latest
+}
+
+export interface CrossChainResult {
+  address: string;
+  queryType: string;
+  results: ChainData[];
+  timestamp: number;
+}
+
+export interface LzReadRequest {
+  id: string;
+  sourceChain: string;
+  targetChains: string[];
+  requestType: string;
+  status: 'pending' | 'completed' | 'failed';
+  timestamp: number;
+  result?: CrossChainResult;
+}

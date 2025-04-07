@@ -2,7 +2,9 @@ import {
   ProcessedDeployment,
   NetworkData,
   DeploymentStats,
-  FilterOptions
+  FilterOptions,
+  CrossChainQuery,
+  LzReadRequest
 } from "@shared/types";
 import { apiRequest } from "./queryClient";
 
@@ -71,5 +73,38 @@ export async function fetchStats(): Promise<DeploymentStats> {
 // Fetch filter options
 export async function fetchFilterOptions(): Promise<FilterOptions> {
   const response = await apiRequest("GET", "/api/filter-options");
+  return response.json();
+}
+
+// lzRead API functions
+
+// Perform a cross-chain query using lzRead
+export async function performCrossChainQuery(query: CrossChainQuery): Promise<LzReadRequest> {
+  const response = await apiRequest("POST", "/api/lzread/query", query);
+  
+  if (!response.ok) {
+    throw new Error(`Failed to perform cross-chain query: ${response.statusText}`);
+  }
+  
+  return response.json();
+}
+
+// Fetch recent lzRead requests
+export async function fetchRecentLzReadRequests(limit: number = 10): Promise<LzReadRequest[]> {
+  const response = await apiRequest("GET", `/api/lzread/recent?limit=${limit}`);
+  return response.json();
+}
+
+// Fetch a specific lzRead request by ID
+export async function fetchLzReadRequestById(id: string): Promise<LzReadRequest> {
+  const response = await apiRequest("GET", `/api/lzread/request/${id}`);
+  
+  if (!response.ok) {
+    if (response.status === 404) {
+      throw new Error(`Request with ID ${id} not found`);
+    }
+    throw new Error(`Failed to fetch request: ${response.statusText}`);
+  }
+  
   return response.json();
 }
